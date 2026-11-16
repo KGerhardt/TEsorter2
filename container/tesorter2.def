@@ -3,6 +3,9 @@
 #
 # From the repository root:
 #   apptainer build tesorter2_2.0.0.sif container/tesorter2.def
+# If that stops with "newuidmap was not found in PATH" (an unprivileged
+# Apptainer such as the conda package, with your user in /etc/subuid):
+#   apptainer build --ignore-subuid tesorter2_2.0.0.sif container/tesorter2.def
 #
 # (With Docker available, the Docker image can be converted instead:
 #   apptainer build tesorter2_2.0.0.sif docker-daemon://tesorter2:2.0.0)

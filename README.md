@@ -48,6 +48,13 @@ apptainer build tesorter2_2.0.0.sif container/tesorter2.def
 apptainer exec tesorter2_2.0.0.sif TEsorter2 TEs.fa -p 8
 ```
 
+If the build stops at once with `newuidmap was not found in PATH` (an unprivileged Apptainer, such
+as the conda package, on a system that lists your user in `/etc/subuid`), add `--ignore-subuid`:
+
+```bash
+apptainer build --ignore-subuid tesorter2_2.0.0.sif container/tesorter2.def
+```
+
 ### From source
 
 ```bash

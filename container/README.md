@@ -22,6 +22,13 @@ systems (about 5 minutes, ~800 MB image):
 apptainer build tesorter2_2.0.0.sif container/tesorter2.def
 ```
 
+If it stops at once with `newuidmap was not found in PATH` (an unprivileged Apptainer, such as the
+conda package, on a system that lists your user in `/etc/subuid`), add `--ignore-subuid`:
+
+```bash
+apptainer build --ignore-subuid tesorter2_2.0.0.sif container/tesorter2.def
+```
+
 With a Docker image already built, `apptainer build tesorter2_2.0.0.sif docker-daemon://tesorter2:2.0.0`
 converts it instead.
 
