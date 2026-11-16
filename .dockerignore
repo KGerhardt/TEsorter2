@@ -1,5 +1,4 @@
 .git
-_regression
 tests
 container/*.sif
 **/__pycache__
