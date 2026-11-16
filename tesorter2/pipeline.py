@@ -27,10 +27,6 @@ from .subset import subset_fasta
 from .hierarchical_search import DEFAULT_STAGES
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
 log = logging.getLogger(__name__)
 
 # Database directory: the databases ship inside the package. Override with
@@ -177,6 +173,7 @@ def _resolve_stages(stages_arg):
 
 def main(argv=None):
     args = parse_args(argv)
+    cli.setup_logging(args.debug)
 
     genome_mode = args.genome
     if args.force_write_hmmscan:
@@ -283,7 +280,7 @@ def main(argv=None):
     log.info(f"Input: {args.sequence}")
     log.info(f"Databases: {', '.join(db_names)}")
     log.info(f"Output prefix: {os.path.join(outdir, prefix)}")
-    log.info(f"Temporary directory: {tmp_dir}")
+    log.debug(f"Temporary directory: {tmp_dir}")
 
     # Database alphabet decides the engines: AA databases run the --stages
     # cascade, DNA databases nhmmer.
@@ -291,8 +288,8 @@ def main(argv=None):
     for name, path in db_paths.items():
         alphabet = peek_alphabet(path)
         db_alphabets[name] = alphabet
-        log.info(f"  {name}: {alphabet}, translate="
-                 f"{'yes' if alphabet == AMINO_ALPHABET else 'no'}")
+        log.debug(f"  {name}: {alphabet}, translate="
+                  f"{'yes' if alphabet == AMINO_ALPHABET else 'no'}")
 
     # Genome mode: dispatch to the domain-level genome scanner and stop here.
     # It searches each chromosome whole, classifies each TE domain, and emits
@@ -349,9 +346,9 @@ def main(argv=None):
         out = fn(*fa, **fk)
         wall, cpu = time.time() - t0, _cpu_now() - c0
         stage_rows.append((name, wall, cpu, cores))
-        log.info("  %s: %.1fs wall, %.1fs cpu over %d cores (%.0f%% utilised)",
-                 name, wall, cpu, cores,
-                 100 * cpu / (wall * cores) if wall else 0)
+        log.debug("  %s: %.1fs wall, %.1fs cpu over %d cores (%.0f%% utilised)",
+                  name, wall, cpu, cores,
+                  100 * cpu / (wall * cores) if wall else 0)
         return out
     fa = open_input(args.sequence)
     nucl_lengths = {rec.name: len(rec) for rec in fa}
@@ -438,7 +435,7 @@ def main(argv=None):
         # Nothing to fall through from; run them as the primary arm instead of
         # searching an empty remainder. (Extending a run that had a primary
         # arm, that arm is what they fall through from.)
-        log.info("Only subordinate databases requested; running them directly")
+        log.debug("Only subordinate databases requested; running them directly")
         primary_names, sub_names = sub_names, []
     if sub_names:
         log.info("Primary: %s", ", ".join(primary_names))
@@ -693,16 +690,16 @@ def main(argv=None):
     #         log.info(f"  Domain sequences: {dom_faa}")
 
     # Build remaining indexes (classifications, blast_hits) and truncate WAL
-    log.info("Finalizing database")
+    log.debug("Finalizing database")
     t_fin0 = time.time()
     finalize_db(conn)
     if args.memory_db:
         t_db = time.time()
         from .results import backup_to
         backup_to(conn, db_path_out)
-        log.info("  Results database written to disk in %.1fs",
-                 time.time() - t_db)
-    log.info(f"  Finalized in {time.time() - t_fin0:.1f}s")
+        log.debug("  Results database written to disk in %.1fs",
+                  time.time() - t_db)
+    log.debug(f"  Finalized in {time.time() - t_fin0:.1f}s")
 
     conn.close()
 
@@ -722,7 +719,7 @@ def main(argv=None):
         for d in ("primary", "subordinate", "blast_pass2"):
             remove_path(os.path.join(tmp_dir, d))
         _remove_tmp(tmp_dir, tmp_existed)
-        log.info("Removed intermediate files (-nocln keeps them)")
+        log.debug("Removed intermediate files (-nocln keeps them)")
 
     t_end = time.time()
     log.info(f"Done in {t_end - t_start:.1f}s")

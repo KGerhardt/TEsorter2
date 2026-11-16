@@ -126,7 +126,7 @@ def merge_classified_fastas(out_fa, fa_primary, fa_extra=None, clean_nucl=True):
             emit_records(fa_extra, fout)
 
     suffix = " [non-ATCG stripped]" if clean_nucl else ""
-    log.info(f"pass-2 database FASTA written: {out_fa} ({n} unique IDs){suffix}")
+    log.debug(f"pass-2 database FASTA written: {out_fa} ({n} unique IDs){suffix}")
 
 
 def update_classified_fasta_headers(fasta_path, hmm_cls, tmpdir):
@@ -210,4 +210,4 @@ def clean_fasta_atcg(path):
                 buf.append(line)
         flush()
     os.replace(tmp, path)
-    log.info(f"non-ATCG characters removed from {path}")
+    log.debug(f"non-ATCG characters removed from {path}")

@@ -35,7 +35,7 @@ def minimap2_version(bin="minimap2"):
         return None
     r = subprocess.run([bin, "--version"], capture_output=True, text=True, check=False)
     v = (r.stdout or r.stderr).strip().splitlines()[0] if (r.stdout or r.stderr) else "unknown"
-    log.info(f"minimap2 version: {v}")
+    log.debug(f"minimap2 version: {v}")
     return v
 
 
@@ -69,7 +69,7 @@ def run_minimap2(query_fa, target_fa, paf_out, ncpu=4,
         f"{extra} "
         f"-o {paf_out} {target_fa} {query_fa}"
     )
-    log.info(f"minimap2 cmd: {cmd}")
+    log.debug(f"minimap2 cmd: {cmd}")
     r = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=False)
     if r.returncode != 0:
         raise RuntimeError(

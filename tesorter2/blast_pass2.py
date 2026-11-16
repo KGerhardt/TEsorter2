@@ -63,7 +63,7 @@ def _get_classified_ids(conn):
     # costs the old 26 s, which is the right trade for not silently treating
     # every sequence as unclassified.
     if not classified and "legacy_hits" in tables:
-        log.info("  No hit_seqs table; recovering targets from legacy_hits")
+        log.debug("  No hit_seqs table; recovering targets from legacy_hits")
         for base_seq, database in conn.execute(
                 "SELECT base_seq, database FROM legacy_hits"):
             classified[base_seq].add(database)
@@ -102,8 +102,8 @@ def split_classified_unclassified(input_fasta, classified_ids, outdir,
                 qh.write(f">{name}\n{seq}\n")
                 n_unclassified += 1
 
-    log.info(f"  Split: {n_classified} classified (DB), "
-             f"{n_unclassified} unclassified (query)")
+    log.debug(f"  Split: {n_classified} classified (DB), "
+              f"{n_unclassified} unclassified (query)")
     return db_fasta, qry_fasta, db_seq_to_dbs
 
 
@@ -136,9 +136,9 @@ def classify_paf_to_tsv(paf_path, tsv_out, min_pid, min_qcov, min_tcov):
             fh.write(format_row(row) + "\n")
 
     n_pass = sum(1 for r in rows if r[1] == "pass")
-    log.info(f"  classify_ltr_paf_fast: {n_pass}/{len(rows)} queries pass "
-             f"(min_pid={min_pid:.3f} min_qcov={min_qcov:.3f} "
-             f"min_tcov={min_tcov:.3f}) -> {tsv_out}")
+    log.debug(f"  classify_ltr_paf_fast: {n_pass}/{len(rows)} queries pass "
+              f"(min_pid={min_pid:.3f} min_qcov={min_qcov:.3f} "
+              f"min_tcov={min_tcov:.3f}) -> {tsv_out}")
     return rows
 
 
@@ -169,7 +169,7 @@ def store_blast_hits(conn, tsv_rows, db_seq_to_dbs):
         "INSERT INTO blast_hits VALUES (?, ?, ?, ?, ?, ?, ?)", rows,
     )
     conn.commit()
-    log.info(f"  Stored {len(rows)} minimap2 best-hit rows")
+    log.debug(f"  Stored {len(rows)} minimap2 best-hit rows")
 
 
 def classify_from_blast(tsv_rows, classifications):
@@ -206,7 +206,7 @@ def classify_from_blast(tsv_rows, classifications):
         })
 
     if no_source:
-        log.info(f"    {no_source} pass-2 hits to unclassified targets (skipped)")
+        log.debug(f"    {no_source} pass-2 hits to unclassified targets (skipped)")
     log.info(f"  pass-2: {len(new_classifications)} sequences classified "
              f"(from {n_pass} rule-passing queries)")
     return new_classifications
@@ -225,8 +225,8 @@ def _cpu_s():
 def _stage_row(timing, name, t0, c0, cores):
     """Log one sub-step's wall and CPU, and append it to `timing` if given."""
     wall, cpu = time.time() - t0, _cpu_s() - c0
-    log.info("  %s: %.1fs wall, %.1fs cpu over %d core(s) (%.0f%% utilised)",
-             name, wall, cpu, cores, 100 * cpu / (wall * cores) if wall else 0)
+    log.debug("  %s: %.1fs wall, %.1fs cpu over %d core(s) (%.0f%% utilised)",
+              name, wall, cpu, cores, 100 * cpu / (wall * cores) if wall else 0)
     if timing is not None:
         timing.append((name, wall, cpu, cores))
 
@@ -262,7 +262,7 @@ def blast_pass2(input_fasta, conn, hmm_classifications=None,
         log.info("  No classified sequences for pass-2")
         return []
 
-    log.info(f"  pass-2 ({aligner}): {len(classified_ids)} classified sequences as targets")
+    log.debug(f"  pass-2 ({aligner}): {len(classified_ids)} classified sequences as targets")
 
     if outdir is None:
         outdir = tempfile.mkdtemp(prefix="tesorter2_minimap2_")
@@ -312,13 +312,13 @@ def blast_pass2(input_fasta, conn, hmm_classifications=None,
             seq_type=seq_type,
         )
         _stage_row(timing, "blast_search", tb, cb, n_processors)
-        log.info(f"  blast pass-2 total: {time.time() - t0:.1f}s")
+        log.debug(f"  blast pass-2 total: {time.time() - t0:.1f}s")
         return new_cls
 
     paf_out = os.path.join(work, "pass2.paf")
     tsv_out = os.path.join(work, "pass2.tsv")
 
-    log.info(f"  Running minimap2 -x {preset} with {n_processors} threads")
+    log.debug(f"  Running minimap2 -x {preset} with {n_processors} threads")
     t1, c1 = time.time(), _cpu_s()
     run_alignment(
         query_fa=qry_fasta, target_fa=db_fasta, paf_out=paf_out,
@@ -336,10 +336,10 @@ def blast_pass2(input_fasta, conn, hmm_classifications=None,
     if tsv_rows:
         store_blast_hits(conn, tsv_rows, db_seq_to_dbs)
 
-    log.info(f"  {len(hmm_classifications)} HMM classifications available for inheritance")
+    log.debug(f"  {len(hmm_classifications)} HMM classifications available for inheritance")
 
     new_cls = classify_from_blast(tsv_rows, hmm_classifications)
 
     t3 = time.time()
-    log.info(f"  minimap2 pass-2 total: {t3 - t0:.1f}s")
+    log.debug(f"  minimap2 pass-2 total: {t3 - t0:.1f}s")
     return new_cls

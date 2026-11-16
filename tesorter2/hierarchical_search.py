@@ -235,7 +235,7 @@ class HmmerEngine(Engine):
         hmms = _CACHE.hmms(db_path)
         optimized = _CACHE.optimized(db_path, AMINO_ALPHABET)
         block = build_sequence_block(fasta, AMINO_ALPHABET)
-        log.info("    pyhmmer: %d models over %d frames", len(hmms), len(block))
+        log.debug("    pyhmmer: %d models over %d frames", len(hmms), len(block))
         return legacy_search(hmms, block, optimized=optimized,
                              n_workers=n_workers)
 
@@ -253,8 +253,8 @@ class NhmmerEngine(Engine):
                search_space_mb=None):
         hmms = _CACHE.hmms(db_path)
         block = build_sequence_block(fasta, DNA_ALPHABET)
-        log.info("    nhmmer: %d models over %d sequences",
-                 len(hmms), len(block))
+        log.debug("    nhmmer: %d models over %d sequences",
+                  len(hmms), len(block))
         return legacy_search_nucl(hmms, block, megabases=search_space_mb,
                                   n_workers=n_workers)
 
@@ -502,8 +502,8 @@ def _materialize(kind, remaining, all_names, sources, workdir, tag):
         return src
     out = os.path.join(workdir, "%s.%s.fa" % (tag, kind))
     n_written, _ = subset_fasta(src, out, remaining, exclude=False)
-    log.info("    handoff: %d sequences -> %s", len(remaining),
-             os.path.basename(out))
+    log.debug("    handoff: %d sequences -> %s", len(remaining),
+              os.path.basename(out))
     if n_written == 0:
         return None
     return out
@@ -546,12 +546,12 @@ def run_cascade(conn, input_fasta, db_paths, db_alphabets, outdir,
     own_mb = sum(n for _, n in lengths) / 1e6
     if search_space_mb is None:
         search_space_mb = own_mb
-        log.info("Search space pinned at %.3f Mb (%d sequences)",
-                 search_space_mb, len(all_names))
+        log.debug("Search space pinned at %.3f Mb (%d sequences)",
+                  search_space_mb, len(all_names))
     else:
-        log.info("Search space pinned at %.3f Mb (whole input); this worker "
-                 "holds %.3f Mb (%d sequences)",
-                 search_space_mb, own_mb, len(all_names))
+        log.debug("Search space pinned at %.3f Mb (whole input); this worker "
+                  "holds %.3f Mb (%d sequences)",
+                  search_space_mb, own_mb, len(all_names))
 
     protein_stages = stages_for_input(protein_stages, seq_type)
     reject_floors = reject_floors or {}
@@ -564,8 +564,8 @@ def run_cascade(conn, input_fasta, db_paths, db_alphabets, outdir,
         a == AMINO_ALPHABET for a in db_alphabets.values())
     if needs_aa and not sources["aa"]:
         sources["aa"] = os.path.join(outdir, "cascade_input.aa")
-        log.info("Six-frame translating input for AA engines%s",
-                 " (stops masked as X)" if mask_stops else "")
+        log.debug("Six-frame translating input for AA engines%s",
+                  " (stops masked as X)" if mask_stops else "")
         translate_fasta(input_fasta, sources["aa"], mask_stops=mask_stops)
 
     if needs_aa and "aa_nostop" in kinds:
@@ -604,9 +604,9 @@ def run_cascade(conn, input_fasta, db_paths, db_alphabets, outdir,
     if not plans:
         return {}
     n_levels = max(max(p[0]) for p in plans.values()) + 1
-    log.info("Cascade: %d level(s) over %d database(s); a reconciled call at "
-             "any level ends that sequence for every database",
-             n_levels, len(plans))
+    log.debug("Cascade: %d level(s) over %d database(s); a reconciled call at "
+              "any level ends that sequence for every database",
+              n_levels, len(plans))
 
     remaining = set(all_names)
     active = {db: set(all_names) for db in plans}     # per-database viability
@@ -615,14 +615,14 @@ def run_cascade(conn, input_fasta, db_paths, db_alphabets, outdir,
 
     for level in range(n_levels):
         if not remaining:
-            log.info("--- Level %d: nothing unresolved, stopping ---", level)
+            log.debug("--- Level %d: nothing unresolved, stopping ---", level)
             break
         runners = [(db, p[0][level], p[1]) for db, p in plans.items()
                    if level in p[0]]
         if not runners:
             continue
-        log.info("--- Level %d: %s ---", level,
-                 ", ".join("%s[%s]" % (db, e.name) for db, e, _ in runners))
+        log.debug("--- Level %d: %s ---", level,
+                  ", ".join("%s[%s]" % (db, e.name) for db, e, _ in runners))
 
         # One materialisation per input kind, not per database: `remaining` is
         # global, so every database at this level searches the same targets.
@@ -645,13 +645,13 @@ def run_cascade(conn, input_fasta, db_paths, db_alphabets, outdir,
 
             n_seqs_in = len(targets)
             n_recs_in = _count_records(fasta)
-            log.info("  [%s] level %d (%s): %d sequences in%s",
-                     db_name, level, engine.name, n_seqs_in,
-                     ("" if n_recs_in in (None, n_seqs_in)
-                      else " (%d %s records searched)"
-                           % (n_recs_in,
-                              "frame" if engine.input_kind.startswith("aa")
-                              else "nucl")))
+            log.debug("  [%s] level %d (%s): %d sequences in%s",
+                      db_name, level, engine.name, n_seqs_in,
+                      ("" if n_recs_in in (None, n_seqs_in)
+                       else " (%d %s records searched)"
+                            % (n_recs_in,
+                               "frame" if engine.input_kind.startswith("aa")
+                               else "nucl")))
             t0 = time.time()
             u0, s0 = _cpu_times()
             hits = engine.search(db_path, fasta, db_name, level_dir, n_workers,
@@ -669,8 +669,8 @@ def run_cascade(conn, input_fasta, db_paths, db_alphabets, outdir,
             wall = time.time() - t0
             u1, s1 = _cpu_times()
             user_s, sys_s = u1 - u0, s1 - s0
-            log.info("    %d hits in %.1fs wall  (cpu %.1fs)",
-                     len(hits), wall, user_s + sys_s)
+            log.debug("    %d hits in %.1fs wall  (cpu %.1fs)",
+                      len(hits), wall, user_s + sys_s)
 
             hits = [h for h in hits if base_name(h["target_name"]) in targets]
             if hits:
@@ -722,9 +722,9 @@ def run_cascade(conn, input_fasta, db_paths, db_alphabets, outdir,
                           dict((d, e.name) for d, e, _ in runners)[db_name],
                           settled & {r["id"] for r in level_results[db_name]},
                           "classified")
-        log.info("  Level %d: %d databases spoke, %d sequences resolved, "
-                 "%d remaining", level, len(level_results), len(settled),
-                 len(remaining))
+        log.debug("  Level %d: %d databases spoke, %d sequences resolved, "
+                  "%d remaining", level, len(level_results), len(settled),
+                  len(remaining))
         for row in timing:
             if row["stage"] == level and row["remaining"] == "":
                 row["remaining"] = len(remaining)
@@ -766,11 +766,11 @@ def _write_timing(rows, path):
                                                "seqs": 0, "cls": 0})
         e["wall"] += r["wall_s"]; e["cpu"] += r["cpu_s"]
         e["seqs"] += r["seqs_in"]; e["cls"] += r["classified"]
-    log.info("Cascade cost by engine (summed over databases):")
+    log.debug("Cascade cost by engine (summed over databases):")
     for name, e in sorted(by_engine.items(), key=lambda kv: -kv[1]["wall"]):
-        log.info("  %-7s %8.1fs wall  %9.1fs cpu  %8d seqs in  %7d classified",
-                 name, e["wall"], e["cpu"], e["seqs"], e["cls"])
-    log.info("Per-stage detail -> %s", path)
+        log.debug("  %-7s %8.1fs wall  %9.1fs cpu  %8d seqs in  %7d classified",
+                  name, e["wall"], e["cpu"], e["seqs"], e["cls"])
+    log.debug("Per-stage detail -> %s", path)
 
 
 def _iter_names(fasta):

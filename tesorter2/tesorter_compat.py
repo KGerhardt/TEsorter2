@@ -19,10 +19,6 @@ import sys
 
 from . import cli
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
 log = logging.getLogger(__name__)
 
 
@@ -30,6 +26,7 @@ def main(argv=None):
     from .pipeline import DB_ALIASES
     args = cli.parse_args(argv, prog="TEsorter", classic=True,
                           aliases=DB_ALIASES)
+    cli.setup_logging(args.debug)
     return run_classic(args)
 
 
@@ -195,7 +192,8 @@ def run_classic(args):
                                           mode=run_mode)
                     all_results = results + blast_cls
                     export_classification_tsv(all_results, cls_out)
-                    log.info(f"minimap2 pass-2: {len(blast_cls)} additional -> {cls_out}")
+                    log.info(f"pass-2 ({args.pass2_aligner}): {len(blast_cls)} "
+                             f"additional -> {cls_out}")
 
     # Generate TEsorter-format output files
     if config and results:

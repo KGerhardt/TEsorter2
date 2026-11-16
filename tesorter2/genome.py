@@ -138,7 +138,7 @@ def group_resolve_overlaps(features):
     for (chrom, ftype), items in itertools.groupby(sorted(features, key=keyf),
                                                     key=keyf):
         items = list(items)
-        log.info("  resolving overlaps in {} {} ({} features)".format(
+        log.debug("  resolving overlaps in {} {} ({} features)".format(
             chrom, ftype, len(items)))
         resolved += resolve_overlaps(items)
     return resolved
@@ -352,11 +352,11 @@ def _search_nhmmer(db_path, db_name, input_fasta, outdir, n_workers):
 
     nhmmer handles long targets, so the target is the whole chromosome and
     hits carry genomic coordinates plus a |fwd1/|rev1 strand suffix."""
-    log.info("  Searching DNA models (stock nhmmer, both strands, raw input)")
+    log.debug("  Searching DNA models (stock nhmmer, both strands, raw input)")
     hits = nhmmer_search.run_and_parse(
         db_path, input_fasta, db_name,
         os.path.join(outdir, "nhmmer"), n_workers=n_workers)
-    log.info("  {} raw nucleotide hits".format(len(hits)))
+    log.debug("  {} raw nucleotide hits".format(len(hits)))
     return hits
 
 
@@ -413,7 +413,7 @@ def run_genome(input_fasta, db_paths, db_alphabets, outdir, prefix,
             hits = _search_nhmmer(db_path, name, input_fasta, workdir, n_workers)
         else:
             hits = _search_bath(input_fasta, db_path, name, n_workers, workdir)
-        log.info("  Search done in {:.1f}s".format(time.time() - t0))
+        log.debug("  Search done in {:.1f}s".format(time.time() - t0))
 
         n_pass = 0
         for h in hits:

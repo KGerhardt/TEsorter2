@@ -142,7 +142,7 @@ def reload_results(conn, n_sequences, compat_rounding=False,
         return {}, {}
     n_ranges = max(1, math.ceil(n_rows / RELOAD_ROWS))
     step = math.ceil(max(n_sequences, 1) / n_ranges)
-    log.info("  Reloading stored hits in %d range(s)", n_ranges)
+    log.debug("  Reloading stored hits in %d range(s)", n_ranges)
 
     per_db = defaultdict(list)
     is_dna = {}
@@ -229,6 +229,6 @@ def clear_pass2(conn):
         conn.execute(ddl)
         conn.executemany("INSERT INTO classifications VALUES (%s)"
                          % ", ".join("?" * len(cols)), keep)
-        log.info("  Cleared %d BLAST pass-2 calls from the earlier run",
-                 len(rows) - len(keep))
+        log.debug("  Cleared %d BLAST pass-2 calls from the earlier run",
+                  len(rows) - len(keep))
     conn.commit()

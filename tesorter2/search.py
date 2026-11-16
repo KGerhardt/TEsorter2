@@ -284,7 +284,7 @@ def legacy_search(hmms, seq_block, optimized=None, n_workers=0):
 
     # Single model: always use parallel=targets
     if len(hmms) == 1:
-        log.info(f"    1 model (parallel=targets)")
+        log.debug(f"    1 model (parallel=targets)")
         return _collect_hits(pyhmmer.hmmsearch(
             _get_search_objs(hmms), seq_block,
             bias_filter=False,
@@ -298,7 +298,7 @@ def legacy_search(hmms, seq_block, optimized=None, n_workers=0):
     all_hits = []
 
     if normal:
-        log.info(f"    {len(normal)} normal models (parallel=queries)")
+        log.debug(f"    {len(normal)} normal models (parallel=queries)")
         results_iter = pyhmmer.hmmsearch(
             _get_search_objs(normal), seq_block,
             bias_filter=False,
@@ -314,9 +314,9 @@ def legacy_search(hmms, seq_block, optimized=None, n_workers=0):
         # models, which is why it went unnoticed.
         names = [h.name.decode() if isinstance(h.name, (bytes, bytearray))
                  else str(h.name) for h in outliers]
-        log.info(f"    {len(outliers)} outlier models (parallel=targets): "
-                 f"{', '.join(n[:40] for n in names[:3])}"
-                 f"{'...' if len(names) > 3 else ''}")
+        log.debug(f"    {len(outliers)} outlier models (parallel=targets): "
+                  f"{', '.join(n[:40] for n in names[:3])}"
+                  f"{'...' if len(names) > 3 else ''}")
         results_iter = pyhmmer.hmmsearch(
             _get_search_objs(outliers), seq_block,
             bias_filter=False,

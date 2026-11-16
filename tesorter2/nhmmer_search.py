@@ -95,7 +95,7 @@ def run_nhmmer(hmm_path, fasta, tblout, n_workers=4, dfam_e=None):
     cmd = [_bin(), "--cpu", str(max(1, n_workers)), "--nobias",
            "-E", str(dfam_e if dfam_e is not None else 10.0),
            "--tblout", tblout, "-o", os.devnull, hmm_path, fasta]
-    log.info("    nhmmer: %s", " ".join(cmd))
+    log.debug("    nhmmer: %s", " ".join(cmd))
     subprocess.run(cmd, check=True)
     return tblout
 
@@ -167,5 +167,5 @@ def run_and_parse(hmm_path, fasta, db_name, workdir, n_workers=4):
     tblout = os.path.join(workdir, "%s.nhmmer.tblout" % db_name)
     run_nhmmer(hmm_path, fasta, tblout, n_workers=n_workers)
     hits = parse_tblout(tblout, model_lengths(hmm_path))
-    log.info("    nhmmer: %d hits for %s", len(hits), db_name)
+    log.debug("    nhmmer: %d hits for %s", len(hits), db_name)
     return hits

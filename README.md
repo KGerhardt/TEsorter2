@@ -166,6 +166,9 @@ TEsorter2 TElib.fa --extend TElib.fa.TEsorter2.db -db dfam-extended
 # Output name and location; temporary files (removed at the end, unless -nocln)
 TEsorter2 TElib.fa -pre results/mylib -tmp /scratch/tmp
 TEsorter2 TElib.fa -tmp /scratch/tmp -nocln
+
+# Show every internal step on screen (each worker's searches, engine commands, timings)
+TEsorter2 TElib.fa --debug
 ```
 
 Run `TEsorter2 -h` for the full list and `TEsorter2 -v` for the version. TEsorter's `-fw`,

@@ -35,7 +35,7 @@ def make_blast_db(db_fasta, seq_type="nucl"):
     if result.returncode != 0:
         log.error(f"makeblastdb failed: {result.stderr}")
         raise RuntimeError(f"makeblastdb failed: {result.stderr}")
-    log.info(f"  BLAST database built: {db_fasta}")
+    log.debug(f"  BLAST database built: {db_fasta}")
 
 
 def run_blast_chunk(query_chunk, db_fasta, output, seq_type="nucl", ncpu=1,
@@ -112,7 +112,7 @@ def store_blast_hits(conn, hits, db_seq_to_dbs):
         rows,
     )
     conn.commit()
-    log.info(f"  Stored {len(rows)} BLAST hits")
+    log.debug(f"  Stored {len(rows)} BLAST hits")
 
 
 def classify_from_blast(conn, classifications, database=None,
@@ -168,7 +168,7 @@ def classify_from_blast(conn, classifications, database=None,
             no_source += 1
 
     if no_source:
-        log.info(f"    {no_source} BLAST hits to unclassified targets (skipped)")
+        log.debug(f"    {no_source} BLAST hits to unclassified targets (skipped)")
 
     log.info(f"  BLAST pass-2: {len(new_classifications)} sequences classified "
              f"(from {len(best)} hits passing filters)")
@@ -228,7 +228,7 @@ def run_pass2_blast(qry_fasta, db_fasta, conn, classifications, db_seq_to_dbs,
         log.info("  No unclassified sequences to search")
         return []
 
-    log.info(f"  Running {len(query_chunks)} BLAST processes")
+    log.debug(f"  Running {len(query_chunks)} BLAST processes")
     t1 = time.time()
     blast_outputs = []
     args_list = []
@@ -239,12 +239,12 @@ def run_pass2_blast(qry_fasta, db_fasta, conn, classifications, db_seq_to_dbs,
     with multiprocessing.Pool(len(query_chunks)) as pool:
         pool.starmap(run_blast_chunk, args_list)
     t2 = time.time()
-    log.info(f"  BLAST search: {t2 - t1:.1f}s")
+    log.debug(f"  BLAST search: {t2 - t1:.1f}s")
 
     all_hits = []
     for blast_out in blast_outputs:
         all_hits.extend(parse_blast_output(blast_out))
-    log.info(f"  {len(all_hits)} total BLAST hits")
+    log.debug(f"  {len(all_hits)} total BLAST hits")
 
     if all_hits:
         store_blast_hits(conn, all_hits, db_seq_to_dbs)
@@ -255,5 +255,5 @@ def run_pass2_blast(qry_fasta, db_fasta, conn, classifications, db_seq_to_dbs,
         min_coverage=min_coverage,
         min_length=min_length,
     )
-    log.info(f"  BLAST pass-2 total: {time.time() - t0:.1f}s")
+    log.debug(f"  BLAST pass-2 total: {time.time() - t0:.1f}s")
     return new_cls

@@ -645,12 +645,12 @@ def classify_sequences(hits, config, gydb_clade_map=None, compat_rounding=False,
 
     # Step 1: hmm2best
     best_idx = hmm2best(hits, config, compat_rounding=compat_rounding)
-    log.info(f"  hmm2best: {len(best_idx)} domain assignments")
+    log.debug(f"  hmm2best: {len(best_idx)} domain assignments")
 
     # Step 2: filter
     filtered_idx = apply_filters(hits, best_idx, compat_rounding=compat_rounding,
                                  **(filters or {}))
-    log.info(f"  After filter: {len(filtered_idx)} assignments")
+    log.debug(f"  After filter: {len(filtered_idx)} assignments")
 
     # Step 3: group by base_seq and classify
     seq_domains = defaultdict(list)
@@ -730,7 +730,7 @@ def classify_sequences(hits, config, gydb_clade_map=None, compat_rounding=False,
             "clade_delta": clade_delta,
         })
 
-    log.info(f"  Classified: {len(results)} sequences")
+    log.debug(f"  Classified: {len(results)} sequences")
     return results
 
 

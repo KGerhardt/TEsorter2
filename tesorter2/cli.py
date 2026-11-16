@@ -21,6 +21,7 @@ Accepted but left out of --help, so existing scripts keep working: the
 """
 
 import argparse
+import logging
 import os
 import sys
 import uuid
@@ -177,7 +178,7 @@ def build_parser(prog="TEsorter2", classic=False, aliases=()):
         # The TEsorter command runs TEsorter's pipeline, which reads only
         # these; the rest are accepted (one parser) but not advertised.
         used = {"-o", "--db-dir", "--pass2-aligner",
-                "--pass2-classified-fasta", "--minimap2-extra"}
+                "--pass2-classified-fasta", "--minimap2-extra", "--debug"}
         add = new.add_argument
 
         def _add(*flags, **kw):
@@ -231,6 +232,11 @@ def build_parser(prog="TEsorter2", classic=False, aliases=()):
     new.add_argument("--emit-timing", action="store_true", default=False,
                      help="Write cascade_timing.tsv and stage_timing.tsv "
                           "(wall and CPU time per stage). Diagnostic only.")
+    new.add_argument("--debug", action="store_true", default=False,
+                     help="Print every internal step on screen: each "
+                          "worker's searches, engine commands, hit counts "
+                          "and timings. By default only progress, results "
+                          "and warnings are shown.")
     new.add_argument("--compat-tesorter-voting", action="store_true",
                      default=False,
                      help="Decide the clade by raw domain-count plurality, as "
@@ -311,6 +317,13 @@ def parse_args(argv=None, prog="TEsorter2", classic=False, aliases=()):
     else:
         args.tmp_given = True
     return args
+
+
+def setup_logging(debug=False):
+    """Screen output: progress, results and warnings, or every internal step
+    with --debug. Partition workers are forked and inherit this setup."""
+    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO,
+                        format="%(asctime)s [%(levelname)s] %(message)s")
 
 
 def database_names(args):

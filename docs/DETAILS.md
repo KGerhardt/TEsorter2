@@ -299,6 +299,7 @@ TEsorter2's options:
 | `--memory-db` | off | Build the results database in RAM and copy it out once at the end |
 | `--extend DB` | off | Add the `-db` databases to a finished run's results database; vote, pass-2 and outputs are redone |
 | `--emit-timing` | off | Write `cascade_timing.tsv` and `stage_timing.tsv`. Diagnostic |
+| `--debug` | off | Print every internal step on screen: each worker's searches, engine commands, hit counts and timings. By default only progress, results and warnings are shown |
 | `--pass2-aligner` | `blast` | `blast` (blastn, or blastp for `-st prot`) or `minimap2` |
 | `--blast-task` | `megablast` | `dc-megablast` is slower but more sensitive to diverged matches |
 | `--pass2-classified-fasta` | none | Extra classified elements (`>id#Order/Superfamily/Clade`) for the pass-2 target pool |

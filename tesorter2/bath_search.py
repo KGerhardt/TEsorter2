@@ -148,11 +148,11 @@ def resolve_bath_db(hmm_path, db_name=None):
     # build time and is read-only afterwards.
     beside = hmm_path + suffix
     if os.path.isfile(beside):
-        log.info(f"  BATH HMM (cached): {beside}")
+        log.debug(f"  BATH HMM (cached): {beside}")
         return beside
     cache = _cache_path(hmm_path, suffix)
     if os.path.isfile(cache):
-        log.info(f"  BATH HMM (cached): {cache}")
+        log.debug(f"  BATH HMM (cached): {cache}")
         return cache
 
     log.info(f"  Converting {os.path.basename(hmm_path)} to BATH format -> {cache}")
@@ -161,8 +161,15 @@ def resolve_bath_db(hmm_path, db_name=None):
     fd, tmp = tempfile.mkstemp(suffix=".bath.hmm", dir=os.path.dirname(cache) or ".")
     os.close(fd)
     try:
-        subprocess.run([_bin("bathconvert")] + (["--fs"] if fs else [])
-                       + [tmp, hmm_path], check=True)
+        # bathconvert prints a line per model: on screen only with --debug,
+        # or its error if the conversion fails.
+        conv = subprocess.run([_bin("bathconvert")] + (["--fs"] if fs else [])
+                              + [tmp, hmm_path], capture_output=True, text=True)
+        log.debug("%s", conv.stdout.rstrip())
+        if conv.returncode:
+            log.error("bathconvert failed on %s:\n%s", hmm_path,
+                      (conv.stderr or conv.stdout).rstrip())
+        conv.check_returncode()
         # mkstemp creates the file 0600; give the conversion the mode of an
         # ordinary new file so other users can read it (shared installs, and
         # container images built as one user and run as another).
@@ -205,7 +212,7 @@ def run_bathsearch(bath_hmm, nucl_fasta, tblout_path, n_workers=4,
     cmd += ["--tblout", tblout_path,
             "-o", os.devnull,
             bath_hmm, nucl_fasta]
-    log.info(f"  bathsearch: {' '.join(cmd)}")
+    log.debug(f"  bathsearch: {' '.join(cmd)}")
     subprocess.run(cmd, check=True)
     return tblout_path
 
@@ -378,5 +385,5 @@ def run_and_parse(hmm_path, nucl_fasta, db_name, n_workers=4, outdir=None,
     finally:
         if tmp_tblout and os.path.exists(tmp_tblout):
             os.remove(tmp_tblout)
-    log.info(f"  BATH: {len(hits)} hits for {db_name}")
+    log.debug(f"  BATH: {len(hits)} hits for {db_name}")
     return hits

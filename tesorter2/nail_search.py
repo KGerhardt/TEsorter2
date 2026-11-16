@@ -199,12 +199,12 @@ def prepare_targets(in_fasta, out_fasta):
     """
     lengths, stops = _scan(in_fasta)
     if stops == 0:
-        log.info("    nail: no stop codons, searching the input directly")
+        log.debug("    nail: no stop codons, searching the input directly")
         return in_fasta, lengths
     with open(in_fasta, "rb") as fin, open(out_fasta, "wb") as fout:
         for line in fin:
             fout.write(line if line[:1] == b">" else line.translate(_STOP_TO_X))
-    log.info("    nail: rewrote %d stop codons as X", stops)
+    log.debug("    nail: rewrote %d stop codons as X", stops)
     return out_fasta, lengths
 
 
@@ -221,7 +221,7 @@ def run_nail(hmm_path, target_fasta, tbl_out, workdir, n_workers=4,
     if mmseqs:
         cmd += ["--mmseqs-path", mmseqs]
     cmd += [hmm_path, target_fasta]
-    log.info("    nail: %s", " ".join(cmd))
+    log.debug("    nail: %s", " ".join(cmd))
     subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
     return tbl_out
 
@@ -318,5 +318,5 @@ def run_and_parse(hmm_path, aa_fasta, db_name, model_lengths, workdir,
     run_nail(hmm_path, target, tbl, workdir, n_workers=n_workers,
              report_evalue=report_evalue)
     hits = parse_nail_tbl(tbl, model_lengths, target_lengths)
-    log.info("    nail: %d hits for %s", len(hits), db_name)
+    log.debug("    nail: %d hits for %s", len(hits), db_name)
     return hits

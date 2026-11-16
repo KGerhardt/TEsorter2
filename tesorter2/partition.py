@@ -116,9 +116,9 @@ def plan_groups(fasta, n_groups, lengths=None):
     sizes = [sum(size_of[n] for n in g) for g in groups]
     total = sum(sizes) or 1
     ideal = total / n_groups
-    log.info("Partitioned %d sequences into %d groups: %.2f Mb each, "
-             "imbalance %.2f%%", len(lengths), n_groups, ideal / 1e6,
-             100 * (max(sizes) - ideal) / ideal if ideal else 0.0)
+    log.debug("Partitioned %d sequences into %d groups: %.2f Mb each, "
+              "imbalance %.2f%%", len(lengths), n_groups, ideal / 1e6,
+              100 * (max(sizes) - ideal) / ideal if ideal else 0.0)
     return groups, sizes, total
 
 
@@ -295,7 +295,7 @@ def run_partitioned(conn, input_fasta, db_paths, db_alphabets, outdir,
     log.info("Searching %d groups across %d workers, one thread each",
              n_groups, min(n_groups, n_workers))
     per_db = {}
-    merged = 0
+    merged = done = 0
     # Each group is merged as it lands, not after the pool drains. The parent
     # is otherwise idle while the workers search, and doing all 64 copies at
     # the end concentrates every row of I/O into one burst against a filesystem
@@ -340,9 +340,13 @@ def run_partitioned(conn, input_fasta, db_paths, db_alphabets, outdir,
             if cleanup:
                 remove_path(work)
                 remove_path(paths[idx])
-            log.info("  group %d done (%s), merged",
-                     idx, ", ".join("%s=%d" % (k, len(v))
-                                    for k, v in part.items()) or "nothing")
+            log.debug("  group %d done (%s), merged",
+                      idx, ", ".join("%s=%d" % (k, len(v))
+                                     for k, v in part.items()) or "nothing")
+            # Progress at each quarter: at most four lines, whatever -p is.
+            done += 1
+            if done * 4 // n_groups > (done - 1) * 4 // n_groups:
+                log.info("  %d/%d groups done", done, n_groups)
     except BaseException:
         # shutdown(wait=True) -- what `with` does -- would sit behind every
         # group still searching, which is hours, before the error surfaced.
@@ -352,7 +356,7 @@ def run_partitioned(conn, input_fasta, db_paths, db_alphabets, outdir,
             proc.terminate()
         raise
     ex.shutdown()
-    log.info("  Merged %d rows from %d partition databases", merged, n_groups)
+    log.debug("  Merged %d rows from %d partition databases", merged, n_groups)
     if cleanup:
         remove_path(part_dir)
     return per_db
