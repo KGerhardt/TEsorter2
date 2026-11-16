@@ -199,13 +199,16 @@ for the original 7-column format.
 > file. If you ever feed the *combined* file to EDTA, extend the `%lib` hash in its
 > `cleanup_misclas.pl` first — it knows `pararetrovirus` but not `Caulimoviridae` or `Bel-Pao`.
 
-Harmonization is gated on at least two databases voting on an element: a single-database run keeps
-native names throughout, so `-db rexdb` alone is unaffected. The two tables driving stages 2 and 3
+In a run over several databases every combined call is harmonized, including an element only one
+database classified, so a clade has one name whichever database called it; a single-database run
+keeps native names throughout, so `-db rexdb` alone is unaffected. The two tables driving stages 2 and 3
 are `tesorter2/database/clade_harmonization.tsv` (mapping) and `clade_scope.tsv` (which superfamily
 each database can resolve at lineage level). The REXdb↔GyDB lineage equivalences — `Ale`/`Retrofit`,
 `Ivana`/`Oryco`, `Tekay`/`Del`, `SIRE`, `Tork`, `Reina`, `CRM`, `Galadriel`, `Athila` — are asserted
 from [Neumann et al. 2019](https://doi.org/10.1186/s13100-018-0144-1) (*Mob DNA* 10:1), not fitted
-to any dataset. Both tables are read from the resolved `--db-dir` first and fall back to the
+to any dataset. A few rows only rename a synonym that tir, pfam-te or Dfam uses to REXdb's name for
+the same taxon (`Tc1_mariner`→`Tc1_Mariner`, `MULE`→`MuDR_Mutator`, `Retroviridae`→`Retrovirus`),
+so their calls pool in the vote. Both tables are read from the resolved `--db-dir` first and fall back to the
 packaged copies, so a custom database collection still harmonizes.
 
 Where one database resolves *below* the level both can express, the combined file adds a `Lineage`
@@ -214,6 +217,10 @@ while GyDB has a single `tat`: both are reported as `Clade=Tat`, and REXdb's fin
 `Lineage`. Lineage is chosen among the databases that actually resolve one, so the finer call
 survives even when the coarser database wins the score vote. (`Tatius` is not part of the group —
 the REXdb HMM places it at `OTA/Tatius`, a sibling of `Tat`.)
+
+Genome mode follows the same rule: with several databases, each feature's `Classification`,
+`clade` and `Name` use the harmonized names, REXdb's finer call goes in a `lineage=` attribute, and
+the raw model name stays in the feature `ID`. A single-database genome run keeps native names.
 
 ## Sequence Ontology
 

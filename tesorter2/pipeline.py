@@ -522,9 +522,13 @@ def main(argv=None):
     # No index build here. reconcile_classifications works off per_db_results,
     # the objects the cascade just returned, and never reads the database; the
     # legacy_hits indexes are built once at the end by finalize_db.
-    # Reconcile across databases via hierarchical weighted vote
+    # Reconcile across databases via hierarchical weighted vote. A run over
+    # several databases reports harmonized names for every call, whichever
+    # round made it; a single-database run keeps TEsorter's native names.
+    multi_db = len(db_names) + len(old_per_db) > 1
     tiers = {n: vote_tier(n, db_alphabets[n]) for n in per_db_results}
-    reconciled = reconcile_classifications(per_db_results, tiers=tiers)
+    reconciled = reconcile_classifications(per_db_results, tiers=tiers,
+                                           harmonize_all=multi_db)
     all_classifications = {r["id"]: r for r in reconciled}
     log.info(f"  Reconciled across {len(per_db_results)} databases: "
              f"{len(reconciled)} sequences")
@@ -538,7 +542,7 @@ def main(argv=None):
     # new collection searches only what they and the primary arm leave.
     if old_sub:
         gained = 0
-        for r in reconcile_classifications(old_sub):
+        for r in reconcile_classifications(old_sub, harmonize_all=multi_db):
             if r["id"] not in all_classifications:
                 all_classifications[r["id"]] = r
                 reconciled.append(r)
@@ -565,7 +569,8 @@ def main(argv=None):
             # Reconciled among themselves only -- the collections are disjoint
             # slices of one library, so two of them hitting the same sequence
             # is ordinary agreement, not a cross-database conflict.
-            sub_reconciled = reconcile_classifications(sub_per_db)
+            sub_reconciled = reconcile_classifications(
+                sub_per_db, harmonize_all=multi_db)
             gained = 0
             for r in sub_reconciled:
                 if r["id"] not in all_classifications:

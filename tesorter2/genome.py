@@ -47,7 +47,6 @@ DNA-alphabet databases (e.g. AnnoSINE) are searched with a second engine:
 import itertools
 import logging
 import os
-import re
 import sys
 import time
 
@@ -57,6 +56,7 @@ from .sequence import (open_input, clean_seq, revcomp,
 from .so_map import so_gff_type
 from .classifier import (parse_clade_rexdb, parse_clade_gydb, classify_element,
                         load_gydb_clade_map, DB_CONFIGS)
+from .clade_harmonize import harmonize, harmonize_lineage
 from . import bath_search, nhmmer_search
 
 
@@ -148,15 +148,17 @@ def group_resolve_overlaps(features):
 # Classification helpers
 # ---------------------------------------------------------------------------
 
-def _fmt_cls(*args):
-    """Join classification levels, dropping 'unknown' and duplicates
-    (faithful port of TEsorter fmt_cls)."""
+def _cls_labels(*args):
+    """Classification levels, dropping 'unknown' and duplicates (faithful
+    port of TEsorter fmt_cls, which joins them with '/'). Kept as a tuple: a
+    harmonized name can itself contain '/' (Tekay/Del), so the joined string
+    cannot be split back into levels."""
     values = []
     for arg in args:
         if arg == "unknown" or arg in values:
             continue
         values.append(arg)
-    return "/".join(values)
+    return tuple(values)
 
 
 def _parse_model(model, config):
@@ -174,13 +176,19 @@ def _parse_model(model, config):
 # Per-hit -> genomic feature
 # ---------------------------------------------------------------------------
 
-def _hit_to_feature(h, engine, config, filters=None):
+def _hit_to_feature(h, engine, config, filters=None, harmonize_as=None):
     """Turn one passing domain hit into a GFF feature tuple, classified on its
     own. Returns (feature_tuple, classification_string) or None.
 
+    harmonize_as is the database the hit came from when several were
+    searched: its names are harmonized (clade_harmonize), so one clade reads
+    the same whichever database found the domain, and a finer REXdb lineage
+    (Ogre under Tat) goes in lineage=. None keeps the native names.
+
     Feature tuple layout (indices used by resolve_overlaps): 0 chrom, 1 source,
     2 type, 3 start, 4 end, 5 score, 6 strand, 7 frame, 8 attributes,
-    9 gid, 10 (chrom, start, end, strand) for sequence extraction.
+    9 gid, 10 (chrom, start, end, strand) for sequence extraction,
+    11 classification levels for the summary.
     """
     model = h["query_name"]
     model_len = h["query_len"]
@@ -217,7 +225,15 @@ def _hit_to_feature(h, engine, config, filters=None):
 
     order, superfamily, disp_clade, complete, _ = classify_element(
         [gene], [clade], [model], [norm_score], config)
-    cls = _fmt_cls(order, superfamily, disp_clade)
+    lineage = ""
+    if harmonize_as:
+        native = (order, superfamily, disp_clade)
+        lineage = harmonize_lineage(harmonize_as, *native)
+        order, superfamily, disp_clade = harmonize(harmonize_as, *native)
+        if native[2] != "unknown":
+            clade = disp_clade      # the model's clade, renamed along with it
+    labels = _cls_labels(order, superfamily, disp_clade)
+    cls = "/".join(labels)
 
     gid = "{}:{}-{}|{}".format(chrom, g_start, g_end, model)
     name = "{}-{}".format(clade, gene)
@@ -229,15 +245,16 @@ def _hit_to_feature(h, engine, config, filters=None):
     # An nhmmer hit, by contrast, IS the element (a SINE has no protein domain),
     # so it is typed directly with the element's SO term.
     gff_type = so_name if engine == "nhmmer" else "CDS"
-    attr = ("ID={};Name={};Classification={};gene={};clade={};"
+    attr = ("ID={};Name={};Classification={};gene={};clade={};{}"
             "coverage={:.1f};evalue={:g};score={:.3f};"
             "Ontology_term={};so_name={}").format(
-        gid, name, cls, gene, clade, hmm_cov, h["evalue"], norm_score,
-        so_id, so_name)
+        gid, name, cls, gene, clade,
+        "lineage={};".format(lineage) if lineage else "",
+        hmm_cov, h["evalue"], norm_score, so_id, so_name)
 
     feature = (chrom, "TEsorter2", gff_type, g_start, g_end,
                round(norm_score, 3), strand, frame_str, attr,
-               gid, extract)
+               gid, extract, labels)
     return feature, cls
 
 
@@ -286,11 +303,9 @@ def summarize(features, summary_path):
     spirit of TEsorter summary_genome, robust to orders outside ORDERS."""
     d_stats = {}
     for feat in sorted(features, key=lambda x: (x[0], x[3])):
-        # Classification is stored in the attribute string.
-        m = re.search(r'Classification=([^;]+)', feat[8])
-        if not m:
+        cls = feat[11]          # the levels, not the '/'-joined string
+        if not cls:
             continue
-        cls = tuple(m.group(1).split("/"))
         length = feat[4] - feat[3] + 1
         # expand to Order, Order/SF, Order/SF/Clade, and Total
         xcls = []
@@ -394,6 +409,10 @@ def run_genome(input_fasta, db_paths, db_alphabets, outdir, prefix,
     if nucl_dbs:
         nhmmer_search.require_binaries()
 
+    # Several databases: harmonize names, as the combined .cls.tsv does, so one
+    # clade reads the same in every feature and in the summary. One database
+    # keeps its native names (TEsorter's genome output).
+    multi_db = len(db_paths) > 1
     all_features = []
     for name in aa_dbs + nucl_dbs:
         db_path = db_paths[name]
@@ -417,7 +436,8 @@ def run_genome(input_fasta, db_paths, db_alphabets, outdir, prefix,
 
         n_pass = 0
         for h in hits:
-            result = _hit_to_feature(h, engine, config, filters)
+            result = _hit_to_feature(h, engine, config, filters,
+                                     harmonize_as=name if multi_db else None)
             if result is not None:
                 all_features.append(result[0])
                 n_pass += 1

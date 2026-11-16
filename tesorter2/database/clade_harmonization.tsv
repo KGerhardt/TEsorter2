@@ -10,6 +10,10 @@
 # single 'tat'. Both land on clade_h=Tat so the vote is consistent, and the finer
 # REXdb call survives in lineage_h. Tatius is NOT in the group: the HMM puts it at
 # OTA/Tatius, a sibling of Tat, so it keeps its own clade.
+# The tir, pfam-te and Dfam rows at the end only rename a synonym to the name
+# rexdb uses for the same taxon (Tc1_mariner -> Tc1_Mariner, MULE ->
+# MuDR_Mutator, Retroviridae -> Retrovirus; each pair shares one SO term), so
+# a run over several databases names it once; they assert nothing else.
 db	order_native	superfamily_native	clade_native	order_h	superfamily_h	clade_h	lineage_h
 gydb	LTR	Caulimoviridae	badnavirus	LTR	Caulimoviridae	Badnavirus	
 gydb	LTR	Caulimoviridae	caulimovirus	LTR	Caulimoviridae	Caulimovirus	
@@ -93,3 +97,14 @@ rexdb	LTR	Gypsy	Retand	LTR	Gypsy	Tat	Retand
 rexdb	LTR	Gypsy	TatI	LTR	Gypsy	Tat	TatI
 rexdb	LTR	Gypsy	TatII	LTR	Gypsy	Tat	TatII
 rexdb	LTR	Gypsy	TatIII	LTR	Gypsy	Tat	TatIII
+tir	TIR	Tc1_mariner	Tc1_mariner	TIR	Tc1_Mariner	Tc1_Mariner	
+pfam-te	TIR	Tc1_Mariner	Tc1_mariner	TIR	Tc1_Mariner	Tc1_Mariner	
+pfam-te	TIR	unknown	Tc1_mariner	TIR	unknown	Tc1_Mariner	
+tir	TIR	MULE	MULE	TIR	MuDR_Mutator	MuDR_Mutator	
+pfam-te	LTR	Retroviridae	Retroviridae	LTR	Retrovirus	Retrovirus	
+pfam-te	LTR	Retroviridae	Retrovirus	LTR	Retrovirus	Retrovirus	
+pfam-te	LTR	Retroviridae	LTR	LTR	Retrovirus	LTR	
+dfam-core	LTR	Retroviridae	Retroviridae	LTR	Retrovirus	Retrovirus	
+dfam-extended	LTR	Retroviridae	Retroviridae	LTR	Retrovirus	Retrovirus	
+dfam-deep	LTR	Retroviridae	Retroviridae	LTR	Retrovirus	Retrovirus	
+dfam-complete	LTR	Retroviridae	Retroviridae	LTR	Retrovirus	Retrovirus	

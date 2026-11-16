@@ -937,7 +937,8 @@ def _scope_aware_superfamily(pool, weighted_winner, scope,
 
 def reconcile_classifications(per_db_results, harmonization=None, scope=None,
                               unknown_competes=False, tiers=None,
-                              scope_min_ratio=SCOPE_MIN_SCORE_RATIO):
+                              scope_min_ratio=SCOPE_MIN_SCORE_RATIO,
+                              harmonize_all=None):
     """Reconcile per-database classifications via hierarchical weighted vote.
 
     For each sequence classified by multiple databases, vote at each taxonomic
@@ -962,9 +963,11 @@ def reconcile_classifications(per_db_results, harmonization=None, scope=None,
     database does not win a superfamily it can only catch-all detect against one
     that genuinely models it (see _scope_aware_superfamily / clade_scope.tsv).
 
-    Elements classified by a single database are left on their native names
-    (strict no-op), so single-db runs are unaffected. The ``secondary`` audit
-    list always keeps native names.
+    In a multi-database run every call is reported with harmonized names,
+    including an element only one database classified, so a clade reads the
+    same whichever database called it. A single-database run keeps native
+    names (strict no-op). The ``secondary`` audit list always keeps native
+    names.
 
     Args:
         per_db_results: dict of {db_name: [result_dict, ...]} where each
@@ -979,6 +982,9 @@ def reconcile_classifications(per_db_results, harmonization=None, scope=None,
             weaker tier's call decides only when nothing above it called.
             Every call still appears in ``secondary``. None = all vote.
         scope_min_ratio: see _scope_aware_superfamily's min_score_ratio.
+        harmonize_all: report harmonized names for every call. The caller
+            passes whether the run searched several databases; None decides
+            from per_db_results alone.
 
     Returns:
         list of dicts — one per sequence — with the primary result's fields
@@ -990,6 +996,8 @@ def reconcile_classifications(per_db_results, harmonization=None, scope=None,
         harmonization = load_harmonization()
     if scope is None:
         scope = load_scope()
+    if harmonize_all is None:
+        harmonize_all = len(per_db_results) > 1
 
     by_seq = defaultdict(list)
     for db_name, results in per_db_results.items():
@@ -1012,11 +1020,12 @@ def reconcile_classifications(per_db_results, harmonization=None, scope=None,
             voters = [e for e in entries if tiers.get(e[0], 0) == top]
         multi_db = len({db for db, _ in voters}) >= 2
 
-        # Harmonize labels only when >= 2 databases weigh in; otherwise keep
-        # native labels so single-database output is byte-identical to before.
+        # Harmonize every label of a multi-database run, so one clade has one
+        # name whether one database called it or several; a single-database
+        # run keeps native labels, byte-identical to TEsorter.
         annotated = []
         for db, r in voters:
-            if multi_db:
+            if harmonize_all:
                 o_h, sf_h, c_h = harmonize(
                     db, r["order"], r["superfamily"], r["clade"], harmonization)
                 l_h = harmonize_lineage(
