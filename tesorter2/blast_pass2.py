@@ -34,7 +34,7 @@ from .classify_ltr_paf_fast import process_paf, format_row
 log = logging.getLogger(__name__)
 
 
-def _get_classified_ids(conn):
+def _hit_databases(conn):
     """Which databases produced hits on each sequence.
 
     Reads the hit_seqs summary table, which store_legacy fills as the hits go
@@ -47,7 +47,8 @@ def _get_classified_ids(conn):
     distinct pairs. It cost 26 s of a 1,066 s partitioned run.
 
     Returns:
-        classified: {base_seq: set(databases)}
+        {base_seq: set(databases)}, for the `classified_by` column only: a
+        hit is not a classification, so this never decides the targets.
     """
     tables = {r[0] for r in conn.execute(
         "SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
@@ -257,10 +258,16 @@ def blast_pass2(input_fasta, conn, hmm_classifications=None,
                     "using blastp for protein input")
         aligner = "blast"
 
-    classified_ids = _get_classified_ids(conn)
-    if not classified_ids:
+    # As in TEsorter, the classified sequences are the targets and every other
+    # sequence is a query -- including one whose hits fell short of a
+    # classification, which is what pass-2 is there to rescue.
+    if hmm_classifications is None:
+        hmm_classifications = {}
+    if not hmm_classifications and not pass2_classified_fasta:
         log.info("  No classified sequences for pass-2")
         return []
+    hit_dbs = _hit_databases(conn)
+    classified_ids = {s: hit_dbs.get(s, set()) for s in hmm_classifications}
 
     log.debug(f"  pass-2 ({aligner}): {len(classified_ids)} classified sequences as targets")
 
@@ -274,9 +281,6 @@ def blast_pass2(input_fasta, conn, hmm_classifications=None,
     if os.path.getsize(qry_fasta) == 0:
         log.info("  No unclassified sequences to search")
         return []
-
-    if hmm_classifications is None:
-        hmm_classifications = {}
 
     if pass2_classified_fasta:
         updated = pass2_external.update_classified_fasta_headers(
