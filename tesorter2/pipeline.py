@@ -174,6 +174,9 @@ def _resolve_stages(stages_arg):
 def main(argv=None):
     args = parse_args(argv)
     cli.setup_logging(args.debug)
+    if args.legacy:
+        from .tesorter_compat import run_classic
+        return run_classic(args)
 
     genome_mode = args.genome
     if args.force_write_hmmscan:
@@ -312,8 +315,7 @@ def main(argv=None):
         log.warning("-mask needs domain coordinates, which the engine cascade "
                     "does not produce for pre-extracted sequences (its hits "
                     "come from several engines with different coordinate "
-                    "systems). Use -genome, or the TEsorter command, for masked "
-                    "output.")
+                    "systems). Use -genome or --legacy for masked output.")
 
     # Create results database. --memory-db keeps it in RAM until the end; see
     # backup_to for why that is not just a speed trick.

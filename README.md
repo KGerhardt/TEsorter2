@@ -17,8 +17,8 @@ TEsorter's classification scheme and its command line, and adds:
   reconciles them, keeping every per-database call for auditing.
 - **Standard vocabulary.** Every call also carries its [Sequence Ontology](http://www.sequenceontology.org) term.
 - **Drop-in replacement.** TEsorter2 takes TEsorter's command line unchanged (`-db`, `-pre`, `-p`,
-  `-cov`, `-genome`, ...): replacing `TEsorter` with `TEsorter2` in a command is enough. The
-  `TEsorter` command is also installed and runs TEsorter's own pipeline.
+  `-cov`, `-genome`, ...), and `TEsorter` is installed as an alias of `TEsorter2`, so existing
+  TEsorter commands run TEsorter2 as they are. `--legacy` runs TEsorter's own pipeline.
 
 ## Installation
 
@@ -132,15 +132,22 @@ classification and SO term) and `assembly.fa.TEsorter2.genome.summary.tsv` (coun
 Superfamily / Clade). Genome mode needs BATH for the protein databases. `-mask soft|hard` also
 writes the masked assembly.
 
-### TEsorter's own pipeline
+### Existing TEsorter commands, and `--legacy`
+
+`TEsorter` is an alias of `TEsorter2`, so a TEsorter command runs TEsorter2 unchanged. Without
+`-db` it searches every default database and names its files `{input}.TEsorter2.*`; add
+`-db rexdb` to keep TEsorter's database and file names (`{input}.rexdb.cls.tsv`, `.cls.lib`), as
+pipelines that read those files, such as EDTA, expect.
+
+`--legacy` runs TEsorter's own pipeline instead:
 
 ```bash
-TEsorter TElib.fa -db rexdb-plant -p 16
+TEsorter2 TElib.fa -db rexdb-plant -p 16 --legacy
 ```
 
 TEsorter's search (one database, rexdb by default, HMMER only), filters and count-based clade vote,
 with every TEsorter file (`.cls.tsv`, `.cls.lib`, `.cls.pep`, `.dom.gff3`, `.dom.tsv`, `.dom.faa`).
-Use it where downstream tools expect TEsorter's pipeline and output files, as EDTA does.
+Use it where downstream tools need TEsorter 1's results or its domain files.
 
 ## Common options
 

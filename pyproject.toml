@@ -40,10 +40,10 @@ tesorter2 = "tesorter2.pipeline:main"
 tesorter2-emit = "tesorter2.emit:main"
 tesorter2-subset = "tesorter2.subset:main"
 TEsorter2 = "tesorter2.pipeline:main"
-# `TEsorter2` takes TEsorter's command line. `TEsorter` runs TEsorter's own
-# pipeline (one database, HMMER, count vote, every TEsorter file) for
-# pipelines such as EDTA that expect TEsorter's pipeline and output files.
-TEsorter = "tesorter2.tesorter_compat:main"
+# `TEsorter2` takes TEsorter's command line and `TEsorter` is the same command,
+# so existing TEsorter commands run TEsorter2. `--legacy` runs TEsorter's own
+# pipeline (one database, HMMER, count vote, every TEsorter file).
+TEsorter = "tesorter2.pipeline:main"
 
 [tool.setuptools]
 packages = ["tesorter2"]

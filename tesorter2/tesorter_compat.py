@@ -1,15 +1,15 @@
 """
-tesorter_compat.py -- TEsorter's own pipeline: the `TEsorter` command.
+tesorter_compat.py -- TEsorter's own pipeline, run by `--legacy`.
 
 Same command line as TEsorter (cli.py) and the same output files under the
 same names: one database (rexdb by default), HMMER on the six-frame
 translation, TEsorter's filters and domain-count clade vote, BLAST pass-2,
-and .cls.tsv/.cls.lib/.cls.pep/.dom.gff3/.dom.tsv/.dom.faa. Pipelines that
-call TEsorter (EDTA, for one) can use it unchanged. -genome hands over to
-TEsorter2's genome mode, which writes TEsorter's genome-mode file names.
+and .cls.tsv/.cls.lib/.cls.pep/.dom.gff3/.dom.tsv/.dom.faa. -genome hands
+over to TEsorter2's genome mode, which writes TEsorter's genome-mode file
+names.
 
 Usage:
-    TEsorter input.fasta -db rexdb-plant -p 4
+    TEsorter2 input.fasta -db rexdb-plant -p 4 --legacy
 """
 
 import logging
@@ -23,18 +23,17 @@ log = logging.getLogger(__name__)
 
 
 def main(argv=None):
-    from .pipeline import DB_ALIASES
-    args = cli.parse_args(argv, prog="TEsorter", classic=True,
-                          aliases=DB_ALIASES)
-    cli.setup_logging(args.debug)
-    return run_classic(args)
+    """The `TEsorter` command, which is TEsorter2 itself. Kept so an entry
+    point that still names this function runs TEsorter2 like the others."""
+    from .pipeline import main as tesorter2_main
+    return tesorter2_main(argv)
 
 
 def run_classic(args):
     names, label = cli.database_names(args)
     if cli.ALL_DBS in names or len(names) > 1:
-        raise SystemExit("TEsorter's pipeline searches one database; run "
-                         "TEsorter2 to search several")
+        raise SystemExit("--legacy runs TEsorter's pipeline, which searches "
+                         "one database; drop --legacy to search several")
     if not names:
         names, label = ["rexdb"], "rexdb"
     db_arg = names[0]
@@ -50,7 +49,7 @@ def run_classic(args):
     filters = dict(min_cov=args.min_coverage, max_evalue=args.max_evalue,
                    min_acc=args.min_probability, min_norm_score=args.min_score)
 
-    log.info("TEsorter2 (TEsorter pipeline)")
+    log.info("TEsorter's own pipeline (--legacy)")
     log.info(f"Input: {args.sequence}")
     log.info(f"Database: {db_name} -> {db_arg}")
     log.info(f"Prefix: {prefix}")

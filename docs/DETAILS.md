@@ -266,7 +266,8 @@ original behaviour.
 
 ```
 TEsorter2 <fasta> [options]               # also installed as tesorter2
-TEsorter  <fasta> [options]               # TEsorter's own pipeline
+TEsorter  <fasta> [options]               # the same command, for existing TEsorter commands
+TEsorter2 <fasta> [options] --legacy      # TEsorter's own pipeline
 ```
 
 The command line is TEsorter's, plus TEsorter2's own options. No mode has to be named: element
@@ -278,16 +279,16 @@ TEsorter's options:
 
 | Flag | Default | Description |
 |---|---|---|
-| `-db`, `--hmm-database` | all bundled except the deeper Dfam (`TEsorter`: `rexdb`) | Database name, HMM file, comma-separated list, or `all`. TEsorter's names are accepted: `rexdb-plant`, `rexdb-metazoa` and the v3 names search the bundled REXdb (plant v4.0 + metazoa v3.1), `rexdb-pnas` is `tir`, `rexdb-line` is `line` |
+| `-db`, `--hmm-database` | all bundled except the deeper Dfam (`--legacy`: `rexdb`) | Database name, HMM file, comma-separated list, or `all`. TEsorter's names are accepted: `rexdb-plant`, `rexdb-metazoa` and the v3 names search the bundled REXdb (plant v4.0 + metazoa v3.1), `rexdb-pnas` is `tir`, `rexdb-line` is `line` |
 | `--db-hmm` | none | Custom HMM file, used instead of `-db` |
 | `-st`, `--seq-type` | `nucl` | `prot` for amino-acid input: no six-frame translation, no BATH, DNA databases skipped |
 | `-pre`, `--prefix` | `{input}.{db}` / `{input}.TEsorter2` | Output prefix, may include a directory |
 | `-p`, `--processors` | `4` | Processors |
 | `-tmp`, `--tmp-dir` | `./tmp-{random id}` | Temporary files; removed at the end unless `-nocln` |
 | `-cov`, `-eval`, `-prob`, `-score` | `20`, `1e-3`, `0.5`, `0.1` | Domain filters: HMM coverage (%), E-value, posterior probability, score per HMM position |
-| `-mask soft hard` | none | Write `{prefix}.softmasked` / `.hardmasked` with the TE domains masked. Needs domain coordinates: `-genome`, or the `TEsorter` command |
+| `-mask soft hard` | none | Write `{prefix}.softmasked` / `.hardmasked` with the TE domains masked. Needs domain coordinates: `-genome` or `--legacy` |
 | `-nocln`, `--no-cleanup` | cleanup **on** | Keep intermediates (partitions, translations, cascade handoffs, pass-2 scratch). A failed run always keeps them |
-| `-dp2`, `--disable-pass2` | off | Skip the pass-2 similarity search (`TEsorter` skips it for `-st prot`, as TEsorter did) |
+| `-dp2`, `--disable-pass2` | off | Skip the pass-2 similarity search (`--legacy` skips it for `-st prot`, as TEsorter did) |
 | `-rule`, `--pass2-rule` | `80-80-80` | Pass-2 threshold, identity-coverage-length |
 | `-nolib`, `-norc` | off | No RepeatMasker library; do not reverse-complement minus-strand sequences in it |
 | `-genome` | off | Genome mode |
@@ -298,6 +299,7 @@ TEsorter2's options:
 
 | Flag | Default | Description |
 |---|---|---|
+| `--legacy` | off | Run TEsorter's own pipeline (see [TEsorter compatibility](#tesorter-compatibility)) |
 | `-o`, `--outdir` | directory of `-pre` | Output directory; a relative `-pre` is placed inside it |
 | `--db-dir` | bundled | Directory holding the HMM databases (or `TESORTER2_DB`) |
 | `--mask-stops` | off | Translate stop codons as `X` instead of `*`, letting profiles align through premature stops |
@@ -346,19 +348,24 @@ MCC ≈ 0.857. The `blast_hits` table of the results database stores one row per
 
 ## TEsorter compatibility
 
-`TEsorter2` takes TEsorter's command line, so a TEsorter command keeps working when only the
-executable name changes; it runs the TEsorter2 search with TEsorter's file names. For workflows
-built around TEsorter 1, `TEsorter` runs TEsorter's own pipeline: one database (rexdb by default), HMMER on the
-six-frame translation, TEsorter's filters and count-based clade voting:
+`TEsorter2` takes TEsorter's command line, and `TEsorter` is installed as the same command, so a
+TEsorter command runs TEsorter2 unchanged, with TEsorter's file names. One default differs: with no
+`-db`, TEsorter2 searches every default database and names its files `{input}.TEsorter2.*`, where
+TEsorter searched rexdb and wrote `{input}.rexdb.*`. A pipeline that reads those files (EDTA reads
+`{input}.rexdb.cls.tsv` and `.cls.lib`) should pass `-db rexdb`.
+
+For workflows that need TEsorter 1's results, `--legacy` runs TEsorter's own pipeline: one database
+(rexdb by default), HMMER on the six-frame translation, TEsorter's filters and count-based clade
+voting:
 
 ```bash
-TEsorter input.fasta -db rexdb -p 16 -pre out
+TEsorter2 input.fasta -db rexdb -p 16 -pre out --legacy
 ```
 
 Every TEsorter 1 option is accepted (table above). Output file names follow TEsorter
 (`{input}.{db}.cls.tsv`, `.cls.lib`, `.cls.pep`, `.dom.gff3`, `.dom.tsv`, `.dom.faa`, and
-`.softmasked`/`.hardmasked` with `-mask`), so EDTA can call it unchanged. With `-genome` it runs
-TEsorter2's genome mode on the one database, under TEsorter's genome-mode names.
+`.softmasked`/`.hardmasked` with `-mask`). With `-genome` it runs TEsorter2's genome mode on the
+one database, under TEsorter's genome-mode names.
 
 ## Architecture
 
@@ -366,7 +373,7 @@ TEsorter2's genome mode on the one database, under TEsorter's genome-mode names.
 
 - **`cli.py`** — the command line shared by `TEsorter2` and `TEsorter`
 - **`pipeline.py`** — search orchestration
-- **`tesorter_compat.py`** — TEsorter's own pipeline (the `TEsorter` command)
+- **`tesorter_compat.py`** — TEsorter's own pipeline (`--legacy`)
 - **`search.py`** — HMM search engine with balanced parallelism
 - **`sequence.py`** — FASTA ingestion (pyfastx) and six-frame translation (pyhmmer)
 - **`hmm.py`** — HMM loading, alphabet detection, optimized profile construction
@@ -382,7 +389,6 @@ TEsorter2's genome mode on the one database, under TEsorter's genome-mode names.
   remapping, overlap-aware deconfliction, order/superfamily/clade assignment
 - **`blast_pass2.py`**, **`minimap.py`**, **`classify_ltr_paf_fast.py`** — pass-2 with BLAST or minimap2, cross-database target pooling
 - **`extend.py`** — `--extend`: adding databases to a finished run
-- **`tesorter_compat.py`** — the `TEsorter` command line
 - **`tesorter_output.py`**, **`emit.py`**, **`id_registry.py`** — output formatting and identifier bookkeeping
 
 ## Parallel strategy

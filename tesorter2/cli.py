@@ -1,9 +1,9 @@
 """
-cli.py -- the one command line shared by `TEsorter2`, `tesorter2` and
-`TEsorter`.
+cli.py -- the one command line of `TEsorter2`, `tesorter2` and `TEsorter`,
+which are the same command.
 
-It is TEsorter's command line, flag for flag, plus TEsorter2's own options.
-A TEsorter command keeps working when only the executable name changes:
+It is TEsorter's command line, flag for flag, plus TEsorter2's own options,
+so an existing TEsorter command runs TEsorter2 unchanged:
 
     TEsorter  in.fa -db rexdb-plant -p 8 -pre out
     TEsorter2 in.fa -db rexdb-plant -p 8 -pre out
@@ -11,8 +11,8 @@ A TEsorter command keeps working when only the executable name changes:
 There is no mode to name. As in TEsorter, element classification is the
 default and `-genome` switches to whole-genome domain annotation.
 
-`TEsorter2` with no -db searches every default database with the TEsorter2
-engine cascade. `TEsorter` runs TEsorter's own single-database pipeline
+With no -db, every default database is searched with the TEsorter2 engine
+cascade. `--legacy` runs TEsorter's own single-database pipeline instead
 (rexdb by default) and writes TEsorter's output files.
 
 Accepted but left out of --help, so existing scripts keep working: the
@@ -56,15 +56,13 @@ def _db_help(aliases):
     return ("Database(s) to search: a name, an HMM file, or a comma-separated "
             "list of them, or 'all' for every bundled database. Accepts "
             "TEsorter's names (%s) and TEsorter2's (%s). "
-            "[default: TEsorter2 searches every bundled database except "
-            "dfam-extended, dfam-deep and dfam-complete; TEsorter searches "
-            "rexdb]"
+            "[default: every bundled database except dfam-extended, "
+            "dfam-deep and dfam-complete; rexdb with --legacy]"
             % (", ".join(TESORTER_DB_NAMES), ", ".join(aliases)))
 
 
-def build_parser(prog="TEsorter2", classic=False, aliases=()):
-    """The full parser, shared by both executables. `classic` (the
-    `TEsorter` command) hides the options its pipeline does not use."""
+def build_parser(prog="TEsorter2", aliases=()):
+    """The full parser, shared by every name the command goes by."""
     parser = argparse.ArgumentParser(
         prog=prog,
         description="Lineage-level classification of transposable elements "
@@ -122,8 +120,7 @@ def build_parser(prog="TEsorter2", classic=False, aliases=()):
                         help="Write the input with its TE domains masked "
                              "(soft: lowercase; hard: N, or X for protein) "
                              "as {prefix}.softmasked / {prefix}.hardmasked. "
-                             "Needs domain coordinates: -genome, or the TEsorter "
-                             "command "
+                             "Needs domain coordinates: -genome or --legacy "
                              "[default: None]")
     parser.add_argument("-nocln", "--no-cleanup", dest="cleanup",
                         action="store_false", default=True,
@@ -138,8 +135,8 @@ def build_parser(prog="TEsorter2", classic=False, aliases=()):
     elem.add_argument("-dp2", "--disable-pass2", action="store_true",
                       default=False,
                       help="Do not further classify the unclassified sequences "
-                           "by similarity. The TEsorter command always skips it "
-                           "for -st prot [default: off]")
+                           "by similarity. --legacy always skips it for -st "
+                           "prot, as TEsorter did [default: off]")
     elem.add_argument("-rule", "--pass2-rule", default="80-80-80",
                       metavar="I-C-L",
                       help="Pass-2 classifying rule, identity-coverage-length. "
@@ -174,18 +171,12 @@ def build_parser(prog="TEsorter2", classic=False, aliases=()):
 
     # ---- TEsorter2 options ----
     new = parser.add_argument_group("TEsorter2 options")
-    if classic:
-        # The TEsorter command runs TEsorter's pipeline, which reads only
-        # these; the rest are accepted (one parser) but not advertised.
-        used = {"-o", "--db-dir", "--pass2-aligner",
-                "--pass2-classified-fasta", "--minimap2-extra", "--debug"}
-        add = new.add_argument
-
-        def _add(*flags, **kw):
-            if not used.intersection(flags):
-                kw["help"] = argparse.SUPPRESS
-            return add(*flags, **kw)
-        new.add_argument = _add
+    new.add_argument("--legacy", action="store_true", default=False,
+                     help="Run TEsorter's own pipeline instead: one database "
+                          "(rexdb by default), HMMER only, TEsorter's filters "
+                          "and count-based clade vote, and every TEsorter file "
+                          "(.cls.tsv, .cls.lib, .cls.pep, .dom.gff3, .dom.tsv, "
+                          ".dom.faa)")
     new.add_argument("--max-search", action="store_true", default=False,
                      help=argparse.SUPPRESS)            # = -db all
     new.add_argument("-o", "--outdir", default=None,
@@ -299,14 +290,13 @@ def normalize_argv(argv):
     return argv
 
 
-def parse_args(argv=None, prog="TEsorter2", classic=False, aliases=()):
-    parser = build_parser(prog=prog, classic=classic, aliases=aliases)
+def parse_args(argv=None, prog="TEsorter2", aliases=()):
+    parser = build_parser(prog=prog, aliases=aliases)
     args = parser.parse_args(normalize_argv(argv))
-    args.classic = classic
 
     # TEsorter: protein input has no pass-2 and nothing to reverse-complement.
     # TEsorter2 itself runs a blastp pass-2 on protein input.
-    if args.seq_type == "prot" and args.classic:
+    if args.seq_type == "prot" and args.legacy:
         args.disable_pass2 = True
         args.no_reverse = True
     if args.genome and args.seq_type == "prot":

@@ -43,9 +43,9 @@ start searching immediately even though the image is read-only.
 docker run --rm -u $(id -u):$(id -g) -v "$PWD":/data tesorter2:2.0.0 \
     TEsorter2 TEs.fa -p 8
 
-# TEsorter's own pipeline (as called by EDTA)
+# TEsorter's own pipeline (TEsorter is an alias of TEsorter2)
 docker run --rm -u $(id -u):$(id -g) -v "$PWD":/data tesorter2:2.0.0 \
-    TEsorter TEs.fa -db rexdb-plant -p 8
+    TEsorter2 TEs.fa -db rexdb-plant -p 8 --legacy
 
 # Apptainer
 apptainer exec tesorter2_2.0.0.sif TEsorter2 TEs.fa -p 8
