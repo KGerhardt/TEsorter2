@@ -45,8 +45,12 @@ On HPC systems without Docker, Apptainer builds the same image unprivileged:
 
 ```bash
 apptainer build tesorter2_2.0.0.sif container/tesorter2.def
-apptainer exec tesorter2_2.0.0.sif TEsorter2 TEs.fa -p 8
+apptainer -q exec tesorter2_2.0.0.sif TEsorter2 TEs.fa -p 8
 ```
+
+`-q` keeps Apptainer's own notices off the screen, such as `INFO: fuse2fs not found, will not be
+able to mount EXT3 filesystems`, which hosts without `fuse2fs` print on every run;
+`export APPTAINER_QUIET=1` does the same for every Apptainer command.
 
 If the build stops at once with `newuidmap was not found in PATH` (an unprivileged Apptainer, such
 as the conda package, on a system that lists your user in `/etc/subuid`), add `--ignore-subuid`:

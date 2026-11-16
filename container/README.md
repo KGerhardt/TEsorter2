@@ -47,6 +47,6 @@ docker run --rm -u $(id -u):$(id -g) -v "$PWD":/data tesorter2:2.0.0 \
 docker run --rm -u $(id -u):$(id -g) -v "$PWD":/data tesorter2:2.0.0 \
     TEsorter2 TEs.fa -db rexdb-plant -p 8 --legacy
 
-# Apptainer
-apptainer exec tesorter2_2.0.0.sif TEsorter2 TEs.fa -p 8
+# Apptainer; -q hides its own notices (e.g. "fuse2fs not found")
+apptainer -q exec tesorter2_2.0.0.sif TEsorter2 TEs.fa -p 8
 ```
