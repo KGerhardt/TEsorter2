@@ -6,15 +6,18 @@ TEsorter2 is the successor of [TEsorter](https://github.com/zhangrengang/TEsorte
 TEsorter's classification scheme and its command line, and adds:
 
 - **Speed.** Searches run in-process through [pyHMMER](https://pyhmmer.readthedocs.io/) with
-  cost-aware load balancing, and the input is split across processors. On 108k RepBase elements
-  TEsorter2 is **5.4× faster** than TEsorter; on a whole rice genome, **4.9× faster**.
+  cost-aware load balancing, and the input is split across processors. With the same databases
+  TEsorter2 is **17.5× faster** than TEsorter, and it classifies all 122,823 curated Repbase
+  sequences in about an hour on 64 threads.
 - **Sensitivity on old, degraded copies.** A staged cascade (`nail → hmmer → BATH`) sends what the
   fast engines cannot classify to [BATH](https://github.com/TravisWheelerLab/BATH), which aligns
   protein profiles directly to DNA and tolerates frameshifts and stop codons. Domains broken by
-  indels are recovered as a single hit.
-- **Many databases in one run, reconciled.** REXdb, GyDB, LINE, TIR, SINE, a TE-focused Pfam set
-  and Dfam are bundled. Each classifies independently and a score-weighted, scope-aware vote
-  reconciles them, keeping every per-database call for auditing.
+  indels are recovered as a single hit: with frameshifting indels at 5% of positions, BATH still
+  detects over 87% of LINE domains, where HMMER detects 24%.
+- **Many databases in one run, reconciled.** REXdb, GyDB, LINE, TIR, plant and animal SINE models,
+  50 TE-related Pfam models and 578 Dfam models are bundled. Each classifies independently and a
+  score-weighted, scope-aware vote reconciles them, keeping every per-database call for auditing;
+  on Repbase this lifts TIR precision from 30% (TIR database alone) to 100%.
 - **Standard vocabulary.** Every call also carries its [Sequence Ontology](http://www.sequenceontology.org) term.
 - **Drop-in replacement.** TEsorter2 takes TEsorter's command line unchanged (`-db`, `-pre`, `-p`,
   `-cov`, `-genome`, ...), and `TEsorter` is installed as an alias of `TEsorter2`, so existing
@@ -223,12 +226,20 @@ always searched with nhmmer.
 
 ## Benchmarks
 
-ANVIL CPU node (AMD EPYC 7763), 16 threads, mean of 3 replicates.
+From the TEsorter2 manuscript (in preparation), on the curated Repbase library (122,823 sequences)
+and the rice genome (*O. sativa* MSU7, ~375 Mb), 64 CPU cores unless noted.
 
-| Task | TEsorter | TEsorter2 (pyHMMER) | TEsorter2 (BATH) |
-|---|---|---|---|
-| 108,318 RepBase LTR/TIR/LINE elements | 2,932 s | **543 s (5.4×)** | 983 s (3.0×) |
-| Rice genome, ~375 Mb, REXdb | 2,127 s | — | **431 s (4.9×)** |
+| Task | Result |
+|---|---|
+| Element mode vs TEsorter, same databases | **17.5× faster** |
+| Element mode vs TEsorter, TEsorter2's larger default database set | 9.5× faster |
+| All 122,823 curated Repbase sequences | **about 1 h** (BLAST 3 h, RepeatClassifier 6 h) |
+| Rice genome in genome mode (REXdb, GyDB, LINE, TIR) | **9.5 min**; BATH is 2.7× faster than HMMsearch |
+| Pass-2 (blastn) on 16 cores | 10.5× speed-up over 1 core; TEsorter's single BLAST call: 2.4×, flat beyond 4 cores |
+
+Accuracy against the curated Repbase labels is **98.8%** at order level and **95.6%** at superfamily
+level, with 96.2% of the classifiable sequences classified. At order level, precision stays at or
+above 0.996, and recall is above RepeatClassifier's and close to BLAST's.
 
 ## More detail
 
