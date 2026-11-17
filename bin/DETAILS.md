@@ -18,7 +18,7 @@ and concurrent jobs sharing one install cannot race over a half-written file.
 > adds `COMPO` to all 314 profiles, derived from each model's own match emissions by HMMER's
 > `p7_hmm_SetComposition()` — no probability was altered and no model was rebuilt. Verified to give
 > byte-identical hits and classifications. Full notice, rationale and reproduction steps in
-> [`tesorter2/database/LICENSES.md`](tesorter2/database/LICENSES.md).
+> [`bin/database/LICENSES.md`](database/LICENSES.md).
 
 To use a custom collection of HMM databases instead, point TEsorter2 at its directory:
 
@@ -202,7 +202,7 @@ for the original 7-column format.
 In a run over several databases every combined call is harmonized, including an element only one
 database classified, so a clade has one name whichever database called it; a single-database run
 keeps native names throughout, so `-db rexdb` alone is unaffected. The two tables driving stages 2 and 3
-are `tesorter2/database/clade_harmonization.tsv` (mapping) and `clade_scope.tsv` (which superfamily
+are `bin/database/clade_harmonization.tsv` (mapping) and `clade_scope.tsv` (which superfamily
 each database can resolve at lineage level). The REXdb↔GyDB lineage equivalences — `Ale`/`Retrofit`,
 `Ivana`/`Oryco`, `Tekay`/`Del`, `SIRE`, `Tork`, `Reina`, `CRM`, `Galadriel`, `Athila` — are asserted
 from [Neumann et al. 2019](https://doi.org/10.1186/s13100-018-0144-1) (*Mob DNA* 10:1), not fitted
@@ -235,7 +235,7 @@ comparable with other annotation tools:
   `Gypsy_LTR_retrotransposon` would assert the domain *is* the retrotransposon.
 
 The mapping authority is [EDTA's `TE_Sequence_Ontology.txt`](https://github.com/oushujun/EDTA/blob/master/bin/TE_Sequence_Ontology.txt),
-bundled in `tesorter2/data/`. All 59 Order/Superfamily labels the bundled databases can emit
+bundled in `bin/data/`. All 59 Order/Superfamily labels the bundled databases can emit
 resolve to a specific SO term; nothing falls back to the generic `repeat_region`.
 
 For lineages with no SO term of their own, EDTA files a descriptive name under a generic

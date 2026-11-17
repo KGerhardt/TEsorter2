@@ -46,7 +46,11 @@ TEsorter2 = "tesorter2.pipeline:main"
 TEsorter = "tesorter2.pipeline:main"
 
 [tool.setuptools]
+# The source lives in bin/ and installs as the `tesorter2` package, so the
+# commands and `import tesorter2` are unchanged. A checkout is used through an
+# install (`pip install -e .`, as environment.yml does).
 packages = ["tesorter2"]
+package-dir = { tesorter2 = "bin" }
 
 [tool.setuptools.package-data]
 # The HMM databases ship inside the package, as they do in TEsorter: ~76 MB

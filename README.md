@@ -253,7 +253,7 @@ above 0.996, and recall is above RepeatClassifier's and close to BLAST's.
 ## More detail
 
 How the cascade, reconciliation, clade vote, Sequence Ontology mapping, DNA databases and parallel
-strategy work, plus the full CLI reference: [`docs/DETAILS.md`](docs/DETAILS.md).
+strategy work, plus the full CLI reference: [`bin/DETAILS.md`](bin/DETAILS.md).
 
 ## Citation
 
@@ -264,11 +264,11 @@ If you use TEsorter2, please cite TEsorter2 (manuscript in preparation) and the 
 > https://doi.org/10.1093/hr/uhac017
 
 Please also cite the databases you search; `TEsorter2 -cite` prints every reference (including
-BATH), and [`tesorter2/database/LICENSES.md`](tesorter2/database/LICENSES.md) lists the sources.
+BATH), and [`bin/database/LICENSES.md`](bin/database/LICENSES.md) lists the sources.
 
 ## License
 
 GPL-3.0-or-later. The bundled HMM databases are third-party data with their own licenses
 (CC BY 4.0 for REXdb, Creative Commons Attribution for GyDB2, MIT for AnnoSINE; Kapitonov LINE and
 Yuan & Wessler TIR are redistributed as in TEsorter). TEsorter2's license does not extend to them;
-details in [`tesorter2/database/LICENSES.md`](tesorter2/database/LICENSES.md).
+details in [`bin/database/LICENSES.md`](bin/database/LICENSES.md).

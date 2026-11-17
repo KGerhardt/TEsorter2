@@ -27,7 +27,7 @@ From: mambaorg/micromamba:1.5.10-bookworm-slim
     pyproject.toml /opt/src/tesorter2/pyproject.toml
     README.md /opt/src/tesorter2/README.md
     LICENSE /opt/src/tesorter2/LICENSE
-    tesorter2 /opt/src/tesorter2/tesorter2
+    bin /opt/src/tesorter2/bin
     container /opt/src/tesorter2/container
 
 %post

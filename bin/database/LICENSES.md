@@ -1,6 +1,7 @@
 # Bundled database licenses
 
-TEsorter2 ships several HMM databases inside the package (`tesorter2/database/`).
+TEsorter2 ships several HMM databases inside the package (`bin/database/` in the
+repository, `tesorter2/database/` once installed).
 These databases were **not** produced by the TEsorter2 authors; each carries its
 own upstream license and citation requirement, listed below. The TEsorter2 code
 is GPL-3.0-or-later (see the top-level `LICENSE`), but that license does **not**

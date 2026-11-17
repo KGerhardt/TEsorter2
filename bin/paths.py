@@ -1,12 +1,13 @@
 """
 paths.py — Centralized resolution of the TEsorter2 database directory.
 
-The HMM databases ship inside the package (tesorter2/database/), as they do in
-TEsorter, so an install needs no download step. Resolution order:
+The HMM databases ship inside the package (its database/ directory: bin/database/
+in the repository, tesorter2/database/ once installed), as they do in TEsorter,
+so an install needs no download step. Resolution order:
 
     1. explicit override (e.g. a --db-dir CLI argument)
     2. the TESORTER2_DB environment variable
-    3. the packaged tesorter2/database/
+    3. the package's database/ directory
 
 Only set 1 or 2 to point at a custom database collection.
 """
