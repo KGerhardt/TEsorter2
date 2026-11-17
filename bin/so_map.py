@@ -6,7 +6,7 @@ vocabulary rather than a standard one. This resolves those labels to Sequence
 Ontology names and accessions so the GFF3 is ontology-compliant and the
 classifications are comparable with other annotation tools.
 
-The authority is EDTA's TE_Sequence_Ontology.txt (bundled in data/), whose
+The authority is EDTA's TE_Sequence_Ontology.txt (bundled in database/), whose
 third column lists the aliases in use across TE databases. Those aliases
 already include "Order/Superfamily" spellings such as LTR/Copia and TIR/hAT,
 so most labels resolve directly against it.
@@ -23,8 +23,8 @@ Matching is case- and separator-insensitive, since databases disagree on both
 
 import os
 
-_DATA = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
-SO_FILE = os.path.join(_DATA, "TE_Sequence_Ontology.txt")
+_DB = os.path.join(os.path.dirname(os.path.realpath(__file__)), "database")
+SO_FILE = os.path.join(_DB, "TE_Sequence_Ontology.txt")
 
 # Generic fallback for labels with no established SO term.
 UNKNOWN_SO = ("repeat_region", "SO:0000657")

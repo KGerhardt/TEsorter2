@@ -235,7 +235,7 @@ comparable with other annotation tools:
   `Gypsy_LTR_retrotransposon` would assert the domain *is* the retrotransposon.
 
 The mapping authority is [EDTA's `TE_Sequence_Ontology.txt`](https://github.com/oushujun/EDTA/blob/master/bin/TE_Sequence_Ontology.txt),
-bundled in `bin/data/`. All 59 Order/Superfamily labels the bundled databases can emit
+bundled in `bin/database/`. All 59 Order/Superfamily labels the bundled databases can emit
 resolve to a specific SO term; nothing falls back to the generic `repeat_region`.
 
 For lineages with no SO term of their own, EDTA files a descriptive name under a generic

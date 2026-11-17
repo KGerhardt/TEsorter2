@@ -55,4 +55,4 @@ package-dir = { tesorter2 = "bin" }
 [tool.setuptools.package-data]
 # The HMM databases ship inside the package, as they do in TEsorter: ~76 MB
 # raw, ~13 MB compressed in the wheel, so an install needs no download step.
-tesorter2 = ["database/*", "data/*"]
+tesorter2 = ["database/*"]
