@@ -94,6 +94,15 @@ TEsorter2 converts each database for BATH on first use and caches it.
 The command line is TEsorter's: an input FASTA, plus options. There is no mode to choose;
 `-genome` switches to whole-genome annotation, as in TEsorter.
 
+### Try it on the test data
+
+A source checkout includes two small inputs; each takes about two minutes on 8 cores:
+
+```bash
+TEsorter2 tests/maizeTE11082026 -p 8       # maize TE library, 1,517 sequences
+TEsorter2 tests/genome.fa -genome -p 8     # 1 Mb of rice chromosome 2 (MSU7) and ChrSyn (183 kb)
+```
+
 ### Classify a TE library
 
 ```bash
