@@ -40,8 +40,7 @@ and minimap2. The HMM databases are bundled. It installs both `TEsorter2` and `T
 
 ### Container (BioContainers)
 
-[BioContainers](https://biocontainers.pro) builds an image from the Bioconda package, with every
-engine:
+TEsorter2 is available on [BioContainers](https://biocontainers.pro):
 
 ```bash
 docker run --rm -u $(id -u):$(id -g) -v "$PWD":/data -w /data \
@@ -56,10 +55,12 @@ apptainer pull tesorter_2.0.0.sif docker://quay.io/biocontainers/tesorter:2.0.0-
 apptainer -q exec tesorter_2.0.0.sif TEsorter2 TEs.fa -p 8
 ```
 
+With Singularity, the commands are the same with `singularity` in place of `apptainer`.
+
 The first run converts the bundled databases to BATH format (about 2 minutes) and caches them.
 Inside a container the cache must sit on a mounted directory to survive between runs:
-`TESORTER2_CACHE` sets it (above, a hidden folder in the working directory). Apptainer mounts
-your home directory, so it uses `~/.cache/tesorter2` with no extra option.
+`TESORTER2_CACHE` sets it (above, a hidden folder in the working directory). Apptainer and
+Singularity mount your home directory, so they use `~/.cache/tesorter2` with no extra option.
 
 `-q` keeps Apptainer's own notices off the screen, such as `INFO: fuse2fs not found, will not be
 able to mount EXT3 filesystems`, which hosts without `fuse2fs` print on every run;
