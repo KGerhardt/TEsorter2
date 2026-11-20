@@ -25,42 +25,45 @@ TEsorter's classification scheme and its command line, and adds:
 
 ## Installation
 
-### conda
+### conda (Bioconda)
+
+TEsorter2 is the `tesorter` package on [Bioconda](https://bioconda.github.io/recipes/tesorter/README.html)
+(version 2.0.0 and later; 1.x is the original TEsorter):
 
 ```bash
-conda install -c conda-forge -c bioconda tesorter
+conda create -n tesorter2 -c conda-forge -c bioconda tesorter=2.0.0
+conda activate tesorter2
 ```
 
 This installs TEsorter2 with every search engine (HMMER, nail with MMseqs2, BATH) plus BLAST+
-and minimap2. The HMM databases are bundled.
+and minimap2. The HMM databases are bundled. It installs both `TEsorter2` and `TEsorter`.
 
-### Container
+### Container (BioContainers)
 
-A Docker / Apptainer image with every engine is described in
-[`container/README.md`](container/README.md):
-
-```bash
-docker build -f container/Dockerfile -t tesorter2:2.0.0 .
-docker run --rm -u $(id -u):$(id -g) -v "$PWD":/data tesorter2:2.0.0 TEsorter2 TEs.fa -p 8
-```
-
-On HPC systems without Docker, Apptainer builds the same image unprivileged:
+[BioContainers](https://biocontainers.pro) builds an image from the Bioconda package, with every
+engine:
 
 ```bash
-apptainer build tesorter2_2.0.0.sif container/tesorter2.def
-apptainer -q exec tesorter2_2.0.0.sif TEsorter2 TEs.fa -p 8
+docker run --rm -u $(id -u):$(id -g) -v "$PWD":/data -w /data \
+    -e TESORTER2_CACHE=/data/.tesorter2_cache \
+    quay.io/biocontainers/tesorter:2.0.0--pyhdfd78af_0 TEsorter2 TEs.fa -p 8
 ```
+
+On HPC systems without Docker, Apptainer runs the same image:
+
+```bash
+apptainer pull tesorter_2.0.0.sif docker://quay.io/biocontainers/tesorter:2.0.0--pyhdfd78af_0
+apptainer -q exec tesorter_2.0.0.sif TEsorter2 TEs.fa -p 8
+```
+
+The first run converts the bundled databases to BATH format (about 2 minutes) and caches them.
+Inside a container the cache must sit on a mounted directory to survive between runs:
+`TESORTER2_CACHE` sets it (above, a hidden folder in the working directory). Apptainer mounts
+your home directory, so it uses `~/.cache/tesorter2` with no extra option.
 
 `-q` keeps Apptainer's own notices off the screen, such as `INFO: fuse2fs not found, will not be
 able to mount EXT3 filesystems`, which hosts without `fuse2fs` print on every run;
 `export APPTAINER_QUIET=1` does the same for every Apptainer command.
-
-If the build stops at once with `newuidmap was not found in PATH` (an unprivileged Apptainer, such
-as the conda package, on a system that lists your user in `/etc/subuid`), add `--ignore-subuid`:
-
-```bash
-apptainer build --ignore-subuid tesorter2_2.0.0.sif container/tesorter2.def
-```
 
 ### From source
 
@@ -75,7 +78,7 @@ or, with HMMER and BLAST+ already on `PATH`, `pip install git+https://github.com
 
 ### BATH outside conda
 
-With a pip or source install, BATH has to be added by hand (it is optional when classifying TE
+BATH is on Bioconda (`conda install -c conda-forge -c bioconda bath`). With a pip install, BATH has to be added by hand (it is optional when classifying TE
 sequences, where the BATH stage is skipped with a warning, and required for `-genome`). Download a prebuilt release from the [BATH releases page](https://github.com/TravisWheelerLab/BATH/releases)
 or build it from source:
 
