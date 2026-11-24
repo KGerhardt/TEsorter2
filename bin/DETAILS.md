@@ -367,6 +367,118 @@ Every TEsorter 1 option is accepted (table above). Output file names follow TEso
 `.softmasked`/`.hardmasked` with `-mask`). With `-genome` it runs TEsorter2's genome mode on the
 one database, under TEsorter's genome-mode names.
 
+## Results database
+
+`{prefix}.db` is an SQLite database. It holds every hit from every search engine, the calls made from
+those hits, and the pass-2 results, so a finished run can be re-analysed, or extended with `--extend`,
+without searching again. Sequences and models are stored by name. The schema below is every table a
+run creates (`id_registry.py` defines more, but nothing in the pipeline uses them):
+
+```sql
+-- results.py: one row per input sequence
+CREATE TABLE sequences (
+    name        TEXT PRIMARY KEY,
+    length      INTEGER NOT NULL
+);
+
+-- results.py: every domain hit, from every engine and database
+CREATE TABLE legacy_hits (
+    id          INTEGER NOT NULL,   -- position of base_seq in the input; -1 if unknown
+    database    TEXT NOT NULL,      -- database searched (rexdb, gydb, ...)
+    target_name TEXT NOT NULL,      -- sequence as searched, with its |fwd1..|rev3 frame suffix if translated
+    base_seq    TEXT NOT NULL,      -- input sequence name (frame suffix removed)
+    strand      TEXT NOT NULL,      -- + or -; . for an untranslated sequence
+    frame       INTEGER NOT NULL,   -- 0-2; 0 for an untranslated sequence
+    target_len  INTEGER NOT NULL,
+    query_name  TEXT NOT NULL,      -- HMM model name
+    domain_type TEXT NOT NULL,      -- domain parsed from the model name (INT, RT, RH, ...)
+    query_len   INTEGER NOT NULL,   -- model length
+    evalue      REAL NOT NULL,      -- full-sequence E-value, score and bias
+    score       REAL NOT NULL,
+    bias        REAL NOT NULL,
+    dom_num     INTEGER NOT NULL,   -- this domain's number, and the number of domains
+    dom_of      INTEGER NOT NULL,
+    c_evalue    REAL NOT NULL,      -- conditional and independent domain E-values
+    i_evalue    REAL NOT NULL,
+    dom_score   REAL NOT NULL,
+    dom_bias    REAL NOT NULL,
+    hmm_from    INTEGER NOT NULL,   -- alignment on the model
+    hmm_to      INTEGER NOT NULL,
+    ali_from    INTEGER NOT NULL,   -- alignment on the sequence
+    ali_to      INTEGER NOT NULL,
+    env_from    INTEGER NOT NULL,   -- envelope on the sequence
+    env_to      INTEGER NOT NULL,
+    acc         REAL NOT NULL,      -- mean posterior probability of the aligned residues
+    search_mode INTEGER NOT NULL DEFAULT 0,
+    engine      TEXT NOT NULL DEFAULT '',  -- hmmer, nhmmer, nail or bath
+    stage       INTEGER NOT NULL DEFAULT 0 -- position in the database's cascade
+);
+
+-- results.py: which sequences each database hit at all (read by pass-2)
+CREATE TABLE hit_seqs (
+    base_seq    TEXT NOT NULL,
+    database    TEXT NOT NULL
+);
+
+-- classifier.py: one call per sequence per database
+CREATE TABLE classifications (
+    seq_id      TEXT NOT NULL,
+    database    TEXT,               -- blast_pass2 for pass-2 calls
+    te_order    TEXT NOT NULL,
+    superfamily TEXT NOT NULL,
+    clade       TEXT NOT NULL,
+    complete    TEXT NOT NULL,
+    strand      TEXT NOT NULL,
+    domains     TEXT,               -- the domains the call rests on, space-separated
+    source      TEXT NOT NULL DEFAULT 'hmm',  -- hmm, or the pass-2 target the call came from
+    mode        TEXT NOT NULL DEFAULT 'default',
+    engine      TEXT,
+    stage       INTEGER NOT NULL DEFAULT 0
+);
+
+-- hierarchical_search.py: why each sequence left each database's cascade
+CREATE TABLE cascade_exits (
+    seq_id      TEXT NOT NULL,
+    database    TEXT NOT NULL,
+    stage       INTEGER NOT NULL,
+    engine      TEXT NOT NULL,
+    outcome     TEXT NOT NULL       -- classified, rejected or unresolved
+);
+
+-- blast_backend.py: pass-2 hits with the default aligner (blast)
+CREATE TABLE blast_hits (
+    qseqid      TEXT NOT NULL,
+    sseqid      TEXT NOT NULL,
+    pident      REAL NOT NULL,
+    length      INTEGER NOT NULL,
+    evalue      REAL NOT NULL,
+    bitscore    REAL NOT NULL,
+    qlen        INTEGER NOT NULL,
+    slen        INTEGER NOT NULL,
+    qcovs       REAL NOT NULL,
+    classified_by TEXT NOT NULL     -- databases that classified sseqid, comma-separated
+);
+```
+
+With `--pass2-aligner minimap2`, `blast_hits` instead has one row per query, from `blast_pass2.py`:
+
+```sql
+CREATE TABLE blast_hits (
+    qseqid        TEXT NOT NULL,
+    sseqid        TEXT NOT NULL,
+    pident        REAL NOT NULL,
+    qcovs         REAL NOT NULL,
+    tcovs         REAL NOT NULL,
+    passes_rule   INTEGER NOT NULL,  -- 1 if the I-C rule passed
+    classified_by TEXT NOT NULL
+);
+```
+
+The `legacy_hits` columns from `target_name` to `acc` are HMMER's `--domtblout` columns. nail and
+BATH hits are converted to the same columns, and `engine` records which tool found each hit. `cascade_exits`
+is written only by a staged (cascade) search, and `blast_hits` only when pass-2 runs. Indexes are not
+listed: `finalize_db` (`results.py`) builds them at the end of a run.
+
 ## Architecture
 
 ### Core

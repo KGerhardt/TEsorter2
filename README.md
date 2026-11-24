@@ -231,7 +231,7 @@ always searched with nhmmer.
 | `{prefix}.cls.lib` | RepeatMasker library of the combined calls (`>id#Order/Superfamily/Clade`) |
 | `{prefix}.{db}.cls.tsv` | Several databases: per-database call in TEsorter's original 7-column format (never harmonized) |
 | `{prefix}.{db}.cls.lib` | Several databases: per-database RepeatMasker library |
-| `{prefix}.db` | SQLite database with every hit and call, for re-analysis without re-searching |
+| `{prefix}.db` | SQLite database with every hit and call, for re-analysis without re-searching ([schema](bin/DETAILS.md#results-database)) |
 | `{prefix}.dom.gff3` | Genome mode: classified TE domain features |
 | `{prefix}.dom.fna` | Genome mode: sequence of each feature |
 | `{prefix}.genome.summary.tsv` | Genome mode: Order / Superfamily / Clade tallies |
